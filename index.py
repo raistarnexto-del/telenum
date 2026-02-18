@@ -6,6 +6,7 @@ import secrets
 import requests
 import asyncio
 import re
+import os
 from datetime import datetime
 from functools import wraps
 from concurrent.futures import ThreadPoolExecutor
@@ -47,7 +48,6 @@ DEFAULT_COUNTRIES = {
     'JP': {'sell': 1.30, 'buy': 1.50, 'name': 'اليابان', 'flag': 'jp', 'code': '+81', 'enabled': True},
     'KR': {'sell': 1.20, 'buy': 1.40, 'name': 'كوريا', 'flag': 'kr', 'code': '+82', 'enabled': True},
     'ID': {'sell': 0.35, 'buy': 0.55, 'name': 'إندونيسيا', 'flag': 'id', 'code': '+62', 'enabled': True},
-    # === دول إضافية كثيرة ===
     'MX': {'sell': 0.45, 'buy': 0.65, 'name': 'المكسيك', 'flag': 'mx', 'code': '+52', 'enabled': True},
     'AR': {'sell': 0.40, 'buy': 0.60, 'name': 'الأرجنتين', 'flag': 'ar', 'code': '+54', 'enabled': True},
     'CO': {'sell': 0.35, 'buy': 0.55, 'name': 'كولومبيا', 'flag': 'co', 'code': '+57', 'enabled': True},
@@ -87,13 +87,15 @@ DEFAULT_COUNTRIES = {
 
 DEFAULT_SETTINGS = {
     'minDeposit': 1.5,
-    'minWithdrawal': 3.0,  # تم التعديل إلى 3 دولار
-    'referralBonus': 0.50, # زيادة المكافأة لجذب المستخدمين
-    'fraudThreshold': 0.65,
+    'minWithdrawal': 3.0,
+    'referralBonus': 0.15, # تم التعديل إلى 0.15$     'fraudThreshold': 0.65,
     'maintenanceMode': False,
     'registrationEnabled': True,
     'buyEnabled': True,
     'sellEnabled': True,
+    'siteName': 'TeleNum',
+    'siteLogo': '',
+    'siteColor': '#0088cc'
 }
 
 # ============== Firebase ==============
@@ -167,10 +169,13 @@ def detect_country(phone):
     return matched
 
 def get_fingerprint(req):
+    # جمع معلومات فريدة للجهاز دون بيانات شخصية
     return {
         'ip': req.headers.get('X-Forwarded-For', req.headers.get('X-Real-IP', req.remote_addr)),
         'ua': req.headers.get('User-Agent', ''),
         'lang': req.headers.get('Accept-Language', ''),
+        'sec_ch_ua': req.headers.get('Sec-CH-UA', ''),
+        'sec_ch_ua_platform': req.headers.get('Sec-CH-UA-Platform', ''),
     }
 
 def check_fraud(user_id, fingerprint):
@@ -246,7 +251,7 @@ async def tg_send_code(phone):
     finally:
         await client.disconnect()
 
-async def tg_verify(phone, code):
+async def tg_verify(phone, code, password=None):
     from telethon import TelegramClient
     from telethon.sessions import StringSession
     from telethon.errors import PhoneCodeInvalidError, SessionPasswordNeededError
@@ -263,10 +268,19 @@ async def tg_verify(phone, code):
         session = client.session.save()
         del phone_sessions[phone]
         return True, "تم", session
+    except SessionPasswordNeededError:
+        if password:
+            try:
+                await client.sign_in(password=password)
+                session = client.session.save()
+                del phone_sessions[phone]
+                return True, "تم", session
+            except Exception as e:
+                return False, "كلمة سر 2FA خاطئة", None
+        else:
+            return False, "2FA_REQUIRED", None # Signal that 2FA is needed
     except PhoneCodeInvalidError:
         return False, "الكود غير صحيح", None
-    except SessionPasswordNeededError:
-        return False, "الحساب محمي بـ 2FA", None
     except Exception as e:
         return False, str(e), None
     finally:
@@ -332,10 +346,10 @@ def verify_bsc_tx(txid):
         return False, 0
 
 # ============== HTML Template Path ==============
-# سنقوم بقراءة الملف الخارجي ليكون التصميم مفصولاً ومنظماً
 def get_index_html():
     try:
-        with open('index.html', 'r', encoding='utf-8') as f:
+        path = os.path.join(os.path.dirname(__file__), 'index.html')
+        with open(path, 'r', encoding='utf-8') as f:
             return f.read()
     except:
         return "<h1>Error: index.html not found</h1>"
@@ -392,7 +406,9 @@ def settings_api():
         'registrationEnabled': s.get('registrationEnabled', True),
         'buyEnabled': s.get('buyEnabled', True),
         'sellEnabled': s.get('sellEnabled', True),
-        'referralBonus': s.get('referralBonus', 0.50)
+        'referralBonus': s.get('referralBonus', 0.15),
+        'siteName': s.get('siteName', 'TeleNum'),
+        'siteColor': s.get('siteColor', '#0088cc')
     })
 
 # Auth
@@ -431,7 +447,8 @@ def register():
         'referralCount': 0,
         'referralEarnings': 0.0,
         'banned': False,
-        'createdAt': datetime.now().isoformat()
+        'createdAt': datetime.now().isoformat(),
+        'fingerprint': fp # Save initial fingerprint
     }
     
     uid = fb_push('users', new_user)
@@ -449,7 +466,7 @@ def register():
                         return jsonify({'success': False, 'error': 'تم اكتشاف نشاط مشبوه'})
                     
                     settings = get_settings()
-                    bonus = settings.get('referralBonus', 0.50)
+                    bonus = settings.get('referralBonus', 0.15)
                     fb_update(f'users/{ref_uid}', {
                         'balance': ref_user.get('balance', 0) + bonus,
                         'referralCount': ref_user.get('referralCount', 0) + 1,
@@ -492,6 +509,37 @@ def login():
             })
     
     return jsonify({'success': False, 'error': 'بيانات غير صحيحة'})
+
+@app.route('/api/auth/auto-login', methods=['POST'])
+def auto_login():
+    # تسجيل دخول تلقائي بناءً على البصمة
+    fp = get_fingerprint(request)
+    fps = fb_get('fingerprints') or {}
+    
+    # البحث عن بصمة مطابقة
+    for fp_id, fp_data in fps.items():
+        if fp_data and fp_data.get('ip') == fp.get('ip') and fp_data.get('ua') == fp.get('ua'):
+            user_id = fp_data.get('userId')
+            user = fb_get(f'users/{user_id}')
+            if user and not user.get('banned'):
+                # تسجيل دخول تلقائي
+                token = generate_token()
+                fb_update(f'users/{user_id}', {'token': token, 'lastLogin': datetime.now().isoformat()})
+                return jsonify({
+                    'success': True,
+                    'user': {
+                        'id': user_id,
+                        'username': user.get('username'),
+                        'email': user.get('email'),
+                        'balance': user.get('balance', 0),
+                        'token': token,
+                        'referralCode': user.get('referralCode'),
+                        'referralCount': user.get('referralCount', 0),
+                        'referralEarnings': user.get('referralEarnings', 0)
+                    }
+                })
+    
+    return jsonify({'success': False, 'error': 'لم يتم العثور على جلسة'})
 
 @app.route('/api/auth/me')
 @verify_token
@@ -626,8 +674,9 @@ def sell_send():
 @verify_token
 def sell_verify():
     data = request.json or {}
-    phone = data.get('phone', '').trim(),
+    phone = data.get('phone', '').strip()
     code = data.get('code', '').strip()
+    password = data.get('password') # 2FA Password
     
     if not phone or not code:
         return jsonify({'success': False, 'error': 'بيانات ناقصة'})
@@ -637,8 +686,12 @@ def sell_verify():
         return jsonify({'success': False, 'error': 'دولة غير مدعومة'})
     
     try:
-        success, msg, session = run_async(tg_verify(phone, code))
+        success, msg, session = run_async(tg_verify(phone, code, password))
+        
         if not success:
+            # إذا كان الخطأ أن 2FA مطلوب، نرجع رسالة خاصة
+            if msg == "2FA_REQUIRED":
+                 return jsonify({'success': False, 'error': '2FA_REQUIRED', 'message': 'هذا الرقم محمي بكلمة مرور ثنائية. أدخلها للمتابعة.'})
             return jsonify({'success': False, 'error': msg})
         
         countries = get_countries()
@@ -676,7 +729,7 @@ def deposit():
     
     valid, amount = verify_bsc_tx(txid)
     if not valid:
-        return jsonify({'success': False, 'error': 'المعاملة غير صالحة'})
+        return jsonify({'success': False, 'error': 'المعاملة غير صالحة أو لم يتم التأكيد بعد. يرجى الانتظار دقيقة والمحاولة مجدداً.'})
     
     fb_push('deposits', {'userId': request.user_id, 'txid': txid, 'amount': amount, 'status': 'approved', 'createdAt': datetime.now().isoformat()})
     
@@ -694,7 +747,7 @@ def withdraw():
     address = data.get('address', '').strip()
     
     settings = get_settings()
-    min_w = settings.get('minWithdrawal', 3.0) # تم التعديل لاستخدام الإعداد الجديد
+    min_w = settings.get('minWithdrawal', 3.0)
     
     if amount < min_w:
         return jsonify({'success': False, 'error': f'الحد الأدنى ${min_w}'})
@@ -804,11 +857,39 @@ def admin_users():
                 'username': u.get('username'),
                 'email': u.get('email'),
                 'balance': u.get('balance', 0),
-                'referralCode': u.get('referralCode'), # Added for admin view
+                'referralCode': u.get('referralCode'),
                 'referralCount': u.get('referralCount', 0),
                 'banned': u.get('banned', False)
             })
     return jsonify({'success': True, 'users': result})
+
+@app.route('/api/admin/user/<uid>', methods=['GET'])
+def admin_get_user(uid):
+    user = fb_get(f'users/{uid}')
+    if not user:
+        return jsonify({'success': False, 'error': 'User not found'})
+    
+    # Get user stats
+    purchases = fb_get('purchases') or {}
+    sells = fb_get('sell_requests') or {}
+    deposits = fb_get('deposits') or {}
+    
+    user_purchases = [p for p in purchases.values() if p and p.get('userId') == uid]
+    user_sells = [s for s in sells.values() if s and s.get('userId') == uid]
+    user_deposits = [d for d in deposits.values() if d and d.get('userId') == uid]
+    
+    return jsonify({
+        'success': True,
+        'user': {
+            'id': uid,
+            **user,
+            'stats': {
+                'totalPurchases': len(user_purchases),
+                'totalSells': len(user_sells),
+                'totalDeposits': len(user_deposits)
+            }
+        }
+    })
 
 @app.route('/api/admin/user/<uid>/ban', methods=['POST'])
 def admin_ban(uid):
@@ -863,15 +944,18 @@ def admin_verify_code():
     data = request.json or {}
     phone = data.get('phone', '').strip()
     code = data.get('code', '').strip()
+    password = data.get('password')
     
     country = detect_country(phone)
     if not country:
         return jsonify({'success': False, 'error': 'دولة غير مدعومة'})
     
     try:
-        success, msg, session = run_async(tg_verify(phone, code))
+        success, msg, session = run_async(tg_verify(phone, code, password))
         if not success:
-            return jsonify({'success': False, 'error': msg})
+             if msg == "2FA_REQUIRED":
+                 return jsonify({'success': False, 'error': '2FA_REQUIRED', 'message': 'هذا الرقم محمي بكلمة مرور ثنائية. أدخلها للمتابعة.'})
+             return jsonify({'success': False, 'error': msg})
         
         countries = get_countries()
         fb_push('numbers', {
@@ -893,6 +977,10 @@ def admin_dashboard():
     numbers = fb_get('numbers') or {}
     sells = fb_get('sell_requests') or {}
     wths = fb_get('withdrawals') or {}
+    deposits = fb_get('deposits') or {}
+    
+    # Calculations
+    total_volume = sum(d.get('amount', 0) for d in deposits.values() if d and d.get('status') == 'approved')
     
     return jsonify({
         'success': True,
@@ -900,7 +988,8 @@ def admin_dashboard():
             'totalUsers': len([u for u in users.values() if u]),
             'availableNumbers': sum(1 for n in numbers.values() if n and n.get('status') == 'available'),
             'pendingSells': sum(1 for s in sells.values() if s and s.get('status') == 'pending'),
-            'pendingWithdrawals': sum(1 for w in wths.values() if w and w.get('status') == 'pending')
+            'pendingWithdrawals': sum(1 for w in wths.values() if w and w.get('status') == 'pending'),
+            'totalDepositsVolume': total_volume
         }
     })
 
