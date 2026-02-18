@@ -1779,7 +1779,11 @@ function checkReferral() {
 async function init() {
     checkReferral();
     
-    // محاولة الدخول التلقائي
+    // ✅ فتح الأدمن من الرابط
+    if (window.location.search.includes('admin=true')) {
+        localStorage.setItem('isAdmin', 'true');
+    }
+    
     const loggedIn = await autoLogin();
     
     setTimeout(() => {
@@ -1792,7 +1796,6 @@ async function init() {
         document.getElementById('authPage').style.display = 'block';
     }
 }
-
 // Auto refresh
 setInterval(async () => {
     if (user) {
