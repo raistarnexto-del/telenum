@@ -7,6 +7,7 @@ import requests
 import asyncio
 import re
 import os
+import random
 from datetime import datetime
 from functools import wraps
 from concurrent.futures import ThreadPoolExecutor
@@ -17,7 +18,6 @@ CORS(app)
 # ============== Configuration ==============
 TELEGRAM_API_ID = 27241932
 TELEGRAM_API_HASH = "218edeae0f4cf9053d7dcbf3b1485048"
-# محفظة الإيداع فقط (للاستلام)
 DEPOSIT_WALLET = "0x8E00A980274Cfb22798290586d97F7D185E3092D"
 BSCSCAN_API_KEY = "8BHURRRGKXD35BPGQZ8E94CVEVAUNMD9UF"
 USDT_CONTRACT_BSC = "0x55d398326f99059fF775485246999027B3197955"
@@ -27,141 +27,149 @@ FIREBASE_URL = "https://lolaminig-afea4-default-rtdb.firebaseio.com"
 executor = ThreadPoolExecutor(max_workers=4)
 phone_sessions = {}
 
-# ============== Default Data (Pricing & 120+ Countries) ==============
+# ============== Pricing Data (Updated) ==============
 DEFAULT_COUNTRIES = {
-    # --- Tier 1: Premium (High Price) ---
-    'KW': {'sell': 2.90, 'buy': 4.50, 'name': 'الكويت', 'flag': 'kw', 'code': '+965', 'enabled': True},
-    'IL': {'sell': 2.80, 'buy': 4.20, 'name': 'إسرائيل', 'flag': 'il', 'code': '+972', 'enabled': True},
-    'AE': {'sell': 2.50, 'buy': 3.80, 'name': 'الإمارات', 'flag': 'ae', 'code': '+971', 'enabled': True},
-    'SA': {'sell': 2.20, 'buy': 3.50, 'name': 'السعودية', 'flag': 'sa', 'code': '+966', 'enabled': True},
-    'QA': {'sell': 2.40, 'buy': 3.60, 'name': 'قطر', 'flag': 'qa', 'code': '+974', 'enabled': True},
-    'BH': {'sell': 2.30, 'buy': 3.40, 'name': 'البحرين', 'flag': 'bh', 'code': '+973', 'enabled': True},
-    'OM': {'sell': 2.10, 'buy': 3.20, 'name': 'عمان', 'flag': 'om', 'code': '+968', 'enabled': True},
-    'CH': {'sell': 2.00, 'buy': 3.00, 'name': 'سويسرا', 'flag': 'ch', 'code': '+41', 'enabled': True},
-    'NO': {'sell': 1.80, 'buy': 2.80, 'name': 'النرويج', 'flag': 'no', 'code': '+47', 'enabled': True},
-    'SE': {'sell': 1.70, 'buy': 2.60, 'name': 'السويد', 'flag': 'se', 'code': '+46', 'enabled': True},
-    'DK': {'sell': 1.60, 'buy': 2.40, 'name': 'الدنمارك', 'flag': 'dk', 'code': '+45', 'enabled': True},
-    'AU': {'sell': 1.50, 'buy': 2.20, 'name': 'أستراليا', 'flag': 'au', 'code': '+61', 'enabled': True},
-    'CA': {'sell': 1.40, 'buy': 2.10, 'name': 'كندا', 'flag': 'ca', 'code': '+1', 'enabled': True},
-    'DE': {'sell': 1.30, 'buy': 2.00, 'name': 'ألمانيا', 'flag': 'de', 'code': '+49', 'enabled': True},
-    'NL': {'sell': 1.20, 'buy': 1.80, 'name': 'هولندا', 'flag': 'nl', 'code': '+31', 'enabled': True},
-    'UK': {'sell': 1.10, 'buy': 1.70, 'name': 'المملكة المتحدة', 'flag': 'gb', 'code': '+44', 'enabled': True},
-    'US': {'sell': 1.00, 'buy': 1.60, 'name': 'الولايات المتحدة', 'flag': 'us', 'code': '+1', 'enabled': True},
-    'FR': {'sell': 0.90, 'buy': 1.40, 'name': 'فرنسا', 'flag': 'fr', 'code': '+33', 'enabled': True},
-    'JP': {'sell': 0.90, 'buy': 1.40, 'name': 'اليابان', 'flag': 'jp', 'code': '+81', 'enabled': True},
-    'KR': {'sell': 0.85, 'buy': 1.30, 'name': 'كوريا الجنوبية', 'flag': 'kr', 'code': '+82', 'enabled': True},
-    
-    # --- Tier 2: Medium Price ---
-    'ES': {'sell': 0.75, 'buy': 1.10, 'name': 'إسبانيا', 'flag': 'es', 'code': '+34', 'enabled': True},
-    'IT': {'sell': 0.70, 'buy': 1.00, 'name': 'إيطاليا', 'flag': 'it', 'code': '+39', 'enabled': True},
-    'PL': {'sell': 0.65, 'buy': 0.95, 'name': 'بولندا', 'flag': 'pl', 'code': '+48', 'enabled': True},
-    'TR': {'sell': 0.60, 'buy': 0.90, 'name': 'تركيا', 'flag': 'tr', 'code': '+90', 'enabled': True},
-    'RU': {'sell': 0.55, 'buy': 0.85, 'name': 'روسيا', 'flag': 'ru', 'code': '+7', 'enabled': True},
-    'BR': {'sell': 0.50, 'buy': 0.80, 'name': 'البرازيل', 'flag': 'br', 'code': '+55', 'enabled': True},
-    'MX': {'sell': 0.50, 'buy': 0.80, 'name': 'المكسيك', 'flag': 'mx', 'code': '+52', 'enabled': True},
-    'AR': {'sell': 0.45, 'buy': 0.75, 'name': 'الأرجنتين', 'flag': 'ar', 'code': '+54', 'enabled': True},
-    'ZA': {'sell': 0.45, 'buy': 0.75, 'name': 'جنوب أفريقيا', 'flag': 'za', 'code': '+27', 'enabled': True},
-    'IN': {'sell': 0.40, 'buy': 0.70, 'name': 'الهند', 'flag': 'in', 'code': '+91', 'enabled': True},
-    'ID': {'sell': 0.40, 'buy': 0.70, 'name': 'إندونيسيا', 'flag': 'id', 'code': '+62', 'enabled': True},
-    
-    # --- Tier 3: Low Price (Rest of World & Syria) ---
-    'SY': {'sell': 0.25, 'buy': 0.35, 'name': 'سوريا', 'flag': 'sy', 'code': '+963', 'enabled': True},
-    'EG': {'sell': 0.25, 'buy': 0.35, 'name': 'مصر', 'flag': 'eg', 'code': '+20', 'enabled': True},
-    'MA': {'sell': 0.25, 'buy': 0.35, 'name': 'المغرب', 'flag': 'ma', 'code': '+212', 'enabled': True},
-    'TN': {'sell': 0.25, 'buy': 0.35, 'name': 'تونس', 'flag': 'tn', 'code': '+216', 'enabled': True},
-    'DZ': {'sell': 0.25, 'buy': 0.35, 'name': 'الجزائر', 'flag': 'dz', 'code': '+213', 'enabled': True},
-    'NG': {'sell': 0.25, 'buy': 0.35, 'name': 'نيجيريا', 'flag': 'ng', 'code': '+234', 'enabled': True},
-    'PK': {'sell': 0.25, 'buy': 0.35, 'name': 'باكستان', 'flag': 'pk', 'code': '+92', 'enabled': True},
-    'BD': {'sell': 0.25, 'buy': 0.35, 'name': 'بنغلاديش', 'flag': 'bd', 'code': '+880', 'enabled': True},
-    'PH': {'sell': 0.25, 'buy': 0.35, 'name': 'الفلبين', 'flag': 'ph', 'code': '+63', 'enabled': True},
-    'VN': {'sell': 0.25, 'buy': 0.35, 'name': 'فيتنام', 'flag': 'vn', 'code': '+84', 'enabled': True},
-    'KE': {'sell': 0.25, 'buy': 0.35, 'name': 'كينيا', 'flag': 'ke', 'code': '+254', 'enabled': True},
-    'GH': {'sell': 0.25, 'buy': 0.35, 'name': 'غانا', 'flag': 'gh', 'code': '+233', 'enabled': True},
-    'UA': {'sell': 0.30, 'buy': 0.40, 'name': 'أوكرانيا', 'flag': 'ua', 'code': '+380', 'enabled': True},
-    'RO': {'sell': 0.30, 'buy': 0.40, 'name': 'رومانيا', 'flag': 'ro', 'code': '+40', 'enabled': True},
-    'TH': {'sell': 0.30, 'buy': 0.40, 'name': 'تايلاند', 'flag': 'th', 'code': '+66', 'enabled': True},
-    'MY': {'sell': 0.30, 'buy': 0.40, 'name': 'ماليزيا', 'flag': 'my', 'code': '+60', 'enabled': True},
-    'CO': {'sell': 0.30, 'buy': 0.40, 'name': 'كولومبيا', 'flag': 'co', 'code': '+57', 'enabled': True},
-    'PE': {'sell': 0.30, 'buy': 0.40, 'name': 'بيرو', 'flag': 'pe', 'code': '+51', 'enabled': True},
-    'VE': {'sell': 0.30, 'buy': 0.40, 'name': 'فنزويلا', 'flag': 've', 'code': '+58', 'enabled': True},
-    'CL': {'sell': 0.30, 'buy': 0.40, 'name': 'تشيلي', 'flag': 'cl', 'code': '+56', 'enabled': True},
-    'CN': {'sell': 0.30, 'buy': 0.40, 'name': 'الصين', 'flag': 'cn', 'code': '+86', 'enabled': True},
-    'HK': {'sell': 0.50, 'buy': 0.70, 'name': 'هونغ كونغ', 'flag': 'hk', 'code': '+852', 'enabled': True},
-    'TW': {'sell': 0.40, 'buy': 0.60, 'name': 'تايوان', 'flag': 'tw', 'code': '+886', 'enabled': True},
-    'SG': {'sell': 0.60, 'buy': 0.90, 'name': 'سنغافورة', 'flag': 'sg', 'code': '+65', 'enabled': True},
-    'JO': {'sell': 0.30, 'buy': 0.45, 'name': 'الأردن', 'flag': 'jo', 'code': '+962', 'enabled': True},
-    'LB': {'sell': 0.30, 'buy': 0.45, 'name': 'لبنان', 'flag': 'lb', 'code': '+961', 'enabled': True},
-    'IQ': {'sell': 0.30, 'buy': 0.45, 'name': 'العراق', 'flag': 'iq', 'code': '+964', 'enabled': True},
-    'YE': {'sell': 0.25, 'buy': 0.35, 'name': 'اليمن', 'flag': 'ye', 'code': '+967', 'enabled': True},
-    'LY': {'sell': 0.25, 'buy': 0.35, 'name': 'ليبيا', 'flag': 'ly', 'code': '+218', 'enabled': True},
-    'SD': {'sell': 0.25, 'buy': 0.35, 'name': 'السودان', 'flag': 'sd', 'code': '+249', 'enabled': True},
-    'IR': {'sell': 0.30, 'buy': 0.40, 'name': 'إيران', 'flag': 'ir', 'code': '+98', 'enabled': True},
-    'AF': {'sell': 0.25, 'buy': 0.35, 'name': 'أفغانستان', 'flag': 'af', 'code': '+93', 'enabled': True},
-    'AZ': {'sell': 0.30, 'buy': 0.45, 'name': 'أذربيجان', 'flag': 'az', 'code': '+994', 'enabled': True},
-    'GE': {'sell': 0.30, 'buy': 0.45, 'name': 'جورجيا', 'flag': 'ge', 'code': '+995', 'enabled': True},
-    'AM': {'sell': 0.30, 'buy': 0.45, 'name': 'أرمينيا', 'flag': 'am', 'code': '+374', 'enabled': True},
-    'KZ': {'sell': 0.30, 'buy': 0.45, 'name': 'كازاخستان', 'flag': 'kz', 'code': '+7', 'enabled': True},
-    'UZ': {'sell': 0.25, 'buy': 0.40, 'name': 'أوزبكستان', 'flag': 'uz', 'code': '+998', 'enabled': True},
-    'NP': {'sell': 0.25, 'buy': 0.35, 'name': 'نيبال', 'flag': 'np', 'code': '+977', 'enabled': True},
-    'LK': {'sell': 0.25, 'buy': 0.35, 'name': 'سريلانكا', 'flag': 'lk', 'code': '+94', 'enabled': True},
-    'MM': {'sell': 0.25, 'buy': 0.35, 'name': 'ميانمار', 'flag': 'mm', 'code': '+95', 'enabled': True},
-    'KH': {'sell': 0.25, 'buy': 0.35, 'name': 'كمبودجا', 'flag': 'kh', 'code': '+855', 'enabled': True},
-    'LA': {'sell': 0.25, 'buy': 0.35, 'name': 'لاوس', 'flag': 'la', 'code': '+856', 'enabled': True},
-    'MN': {'sell': 0.25, 'buy': 0.35, 'name': 'منغوليا', 'flag': 'mn', 'code': '+976', 'enabled': True},
-    'KG': {'sell': 0.25, 'buy': 0.35, 'name': 'قيرغيزستان', 'flag': 'kg', 'code': '+996', 'enabled': True},
-    'TJ': {'sell': 0.25, 'buy': 0.35, 'name': 'طاجيكستان', 'flag': 'tj', 'code': '+992', 'enabled': True},
-    'TM': {'sell': 0.25, 'buy': 0.35, 'name': 'تركمانستان', 'flag': 'tm', 'code': '+993', 'enabled': True},
-    'BY': {'sell': 0.30, 'buy': 0.45, 'name': 'بيلاروسيا', 'flag': 'by', 'code': '+375', 'enabled': True},
-    'MD': {'sell': 0.25, 'buy': 0.40, 'name': 'مولدوفا', 'flag': 'md', 'code': '+373', 'enabled': True},
-    'BG': {'sell': 0.35, 'buy': 0.50, 'name': 'بلغاريا', 'flag': 'bg', 'code': '+359', 'enabled': True},
-    'RS': {'sell': 0.30, 'buy': 0.45, 'name': 'صربيا', 'flag': 'rs', 'code': '+381', 'enabled': True},
-    'HR': {'sell': 0.40, 'buy': 0.60, 'name': 'كرواتيا', 'flag': 'hr', 'code': '+385', 'enabled': True},
-    'SI': {'sell': 0.35, 'buy': 0.55, 'name': 'سلوفينيا', 'flag': 'si', 'code': '+386', 'enabled': True},
-    'SK': {'sell': 0.35, 'buy': 0.55, 'name': 'سلوفاكيا', 'flag': 'sk', 'code': '+421', 'enabled': True},
-    'BA': {'sell': 0.25, 'buy': 0.40, 'name': 'البوسنة', 'flag': 'ba', 'code': '+387', 'enabled': True},
-    'MK': {'sell': 0.25, 'buy': 0.40, 'name': 'مقدونيا', 'flag': 'mk', 'code': '+389', 'enabled': True},
-    'AL': {'sell': 0.25, 'buy': 0.40, 'name': 'ألبانيا', 'flag': 'al', 'code': '+355', 'enabled': True},
-    'ME': {'sell': 0.25, 'buy': 0.40, 'name': 'الجبل الأسود', 'flag': 'me', 'code': '+382', 'enabled': True},
-    'XK': {'sell': 0.25, 'buy': 0.40, 'name': 'كوسوفو', 'flag': 'xk', 'code': '+383', 'enabled': True},
-    'IS': {'sell': 0.50, 'buy': 0.80, 'name': 'آيسلندا', 'flag': 'is', 'code': '+354', 'enabled': True},
-    'LU': {'sell': 0.60, 'buy': 0.90, 'name': 'لوكسمبورغ', 'flag': 'lu', 'code': '+352', 'enabled': True},
-    'MT': {'sell': 0.50, 'buy': 0.80, 'name': 'مالطا', 'flag': 'mt', 'code': '+356', 'enabled': True},
-    'CY': {'sell': 0.40, 'buy': 0.60, 'name': 'قبرص', 'flag': 'cy', 'code': '+357', 'enabled': True},
-    'EE': {'sell': 0.40, 'buy': 0.60, 'name': 'إستونيا', 'flag': 'ee', 'code': '+372', 'enabled': True},
-    'LV': {'sell': 0.40, 'buy': 0.60, 'name': 'لاتفيا', 'flag': 'lv', 'code': '+371', 'enabled': True},
-    'LT': {'sell': 0.35, 'buy': 0.55, 'name': 'ليتوانيا', 'flag': 'lt', 'code': '+370', 'enabled': True},
-    'UY': {'sell': 0.30, 'buy': 0.45, 'name': 'أوروغواي', 'flag': 'uy', 'code': '+598', 'enabled': True},
-    'PY': {'sell': 0.25, 'buy': 0.40, 'name': 'باراغواي', 'flag': 'py', 'code': '+595', 'enabled': True},
-    'BO': {'sell': 0.25, 'buy': 0.40, 'name': 'بوليفيا', 'flag': 'bo', 'code': '+591', 'enabled': True},
-    'EC': {'sell': 0.25, 'buy': 0.40, 'name': 'الإكوادور', 'flag': 'ec', 'code': '+593', 'enabled': True},
-    'CR': {'sell': 0.30, 'buy': 0.45, 'name': 'كوستاريكا', 'flag': 'cr', 'code': '+506', 'enabled': True},
-    'PA': {'sell': 0.30, 'buy': 0.45, 'name': 'بنما', 'flag': 'pa', 'code': '+507', 'enabled': True},
-    'DO': {'sell': 0.25, 'buy': 0.40, 'name': 'الدومينيكان', 'flag': 'do', 'code': '+1', 'enabled': True},
-    'GT': {'sell': 0.25, 'buy': 0.40, 'name': 'غواتيمالا', 'flag': 'gt', 'code': '+502', 'enabled': True},
-    'SV': {'sell': 0.25, 'buy': 0.40, 'name': 'السلفادور', 'flag': 'sv', 'code': '+503', 'enabled': True},
-    'HN': {'sell': 0.25, 'buy': 0.40, 'name': 'هندوراس', 'flag': 'hn', 'code': '+504', 'enabled': True},
-    'NI': {'sell': 0.25, 'buy': 0.40, 'name': 'نيكاراغوا', 'flag': 'ni', 'code': '+505', 'enabled': True},
-    'CU': {'sell': 0.25, 'buy': 0.40, 'name': 'كوبا', 'flag': 'cu', 'code': '+53', 'enabled': True},
-    'JM': {'sell': 0.25, 'buy': 0.40, 'name': 'جامايكا', 'flag': 'jm', 'code': '+1', 'enabled': True},
-    'HT': {'sell': 0.25, 'buy': 0.35, 'name': 'هايتي', 'flag': 'ht', 'code': '+509', 'enabled': True},
-    'PR': {'sell': 0.30, 'buy': 0.45, 'name': 'بورتوريكو', 'flag': 'pr', 'code': '+1', 'enabled': True},
-    'TT': {'sell': 0.25, 'buy': 0.40, 'name': 'ترينيداد', 'flag': 'tt', 'code': '+1', 'enabled': True},
-    'NZ': {'sell': 0.50, 'buy': 0.75, 'name': 'نيوزيلندا', 'flag': 'nz', 'code': '+64', 'enabled': True},
-    'IE': {'sell': 0.50, 'buy': 0.75, 'name': 'أيرلندا', 'flag': 'ie', 'code': '+353', 'enabled': True},
-    'AT': {'sell': 0.60, 'buy': 0.90, 'name': 'النمسا', 'flag': 'at', 'code': '+43', 'enabled': True},
-    'BE': {'sell': 0.50, 'buy': 0.75, 'name': 'بلجيكا', 'flag': 'be', 'code': '+32', 'enabled': True},
-    'PT': {'sell': 0.45, 'buy': 0.70, 'name': 'البرتغال', 'flag': 'pt', 'code': '+351', 'enabled': True},
-    'GR': {'sell': 0.40, 'buy': 0.60, 'name': 'اليونان', 'flag': 'gr', 'code': '+30', 'enabled': True},
-    'FI': {'sell': 0.45, 'buy': 0.70, 'name': 'فنلندا', 'flag': 'fi', 'code': '+358', 'enabled': True},
-    'CZ': {'sell': 0.40, 'buy': 0.60, 'name': 'التشيك', 'flag': 'cz', 'code': '+420', 'enabled': True},
-    'HU': {'sell': 0.35, 'buy': 0.55, 'name': 'المجر', 'flag': 'hu', 'code': '+36', 'enabled': True},
+    # --- Asia (Myanmar, Vietnam, etc.) ---
+    'MM': {'sell': 0.35, 'buy': 0.55, 'name': 'ميانمار', 'flag': 'mm', 'code': '+95', 'enabled': True},
+    'VN': {'sell': 0.38, 'buy': 0.58, 'name': 'فيتنام', 'flag': 'vn', 'code': '+84', 'enabled': True},
+    'LA': {'sell': 0.40, 'buy': 0.60, 'name': 'لاوس', 'flag': 'la', 'code': '+856', 'enabled': True},
+    'ID': {'sell': 0.42, 'buy': 0.62, 'name': 'إندونيسيا', 'flag': 'id', 'code': '+62', 'enabled': True},
+    'KH': {'sell': 0.45, 'buy': 0.65, 'name': 'كمبوديا', 'flag': 'kh', 'code': '+855', 'enabled': True},
+    'PH': {'sell': 0.47, 'buy': 0.67, 'name': 'الفلبين', 'flag': 'ph', 'code': '+63', 'enabled': True},
+    'RU': {'sell': 0.48, 'buy': 0.70, 'name': 'روسيا', 'flag': 'ru', 'code': '+7', 'enabled': True},
+    'KZ': {'sell': 0.50, 'buy': 0.72, 'name': 'كازاخستان', 'flag': 'kz', 'code': '+7', 'enabled': True},
+    'UZ': {'sell': 0.52, 'buy': 0.75, 'name': 'أوزبكستان', 'flag': 'uz', 'code': '+998', 'enabled': True},
+    'KG': {'sell': 0.55, 'buy': 0.78, 'name': 'قيرغيزستان', 'flag': 'kg', 'code': '+996', 'enabled': True},
+    'UA': {'sell': 0.58, 'buy': 0.82, 'name': 'أوكرانيا', 'flag': 'ua', 'code': '+380', 'enabled': True},
+    'PL': {'sell': 0.60, 'buy': 0.85, 'name': 'بولندا', 'flag': 'pl', 'code': '+48', 'enabled': True},
+    'RO': {'sell': 0.62, 'buy': 0.88, 'name': 'رومانيا', 'flag': 'ro', 'code': '+40', 'enabled': True},
+    'LV': {'sell': 0.65, 'buy': 0.90, 'name': 'لاتفيا', 'flag': 'lv', 'code': '+371', 'enabled': True},
+    'EE': {'sell': 0.68, 'buy': 0.95, 'name': 'إستونيا', 'flag': 'ee', 'code': '+372', 'enabled': True},
+    'LT': {'sell': 0.95, 'buy': 1.40, 'name': 'ليتوانيا', 'flag': 'lt', 'code': '+370', 'enabled': True},
+
+    # --- Middle East ---
+    'EG': {'sell': 0.70, 'buy': 0.95, 'name': 'مصر', 'flag': 'eg', 'code': '+20', 'enabled': True},
+    'IQ': {'sell': 0.75, 'buy': 1.00, 'name': 'العراق', 'flag': 'iq', 'code': '+964', 'enabled': True},
+    'MA': {'sell': 0.80, 'buy': 1.10, 'name': 'المغرب', 'flag': 'ma', 'code': '+212', 'enabled': True},
+    'DZ': {'sell': 0.85, 'buy': 1.15, 'name': 'الجزائر', 'flag': 'dz', 'code': '+213', 'enabled': True},
+    'TN': {'sell': 0.90, 'buy': 1.20, 'name': 'تونس', 'flag': 'tn', 'code': '+216', 'enabled': True},
+    'YE': {'sell': 0.95, 'buy': 1.30, 'name': 'اليمن', 'flag': 'ye', 'code': '+967', 'enabled': True},
+    'JO': {'sell': 1.10, 'buy': 1.45, 'name': 'الأردن', 'flag': 'jo', 'code': '+962', 'enabled': True},
+    'LY': {'sell': 1.20, 'buy': 1.60, 'name': 'ليبيا', 'flag': 'ly', 'code': '+218', 'enabled': True},
+    'SD': {'sell': 1.25, 'buy': 1.65, 'name': 'السودان', 'flag': 'sd', 'code': '+249', 'enabled': True},
+    'SY': {'sell': 1.30, 'buy': 1.70, 'name': 'سوريا', 'flag': 'sy', 'code': '+963', 'enabled': True},
+    'LB': {'sell': 1.35, 'buy': 1.75, 'name': 'لبنان', 'flag': 'lb', 'code': '+961', 'enabled': True},
+    'MR': {'sell': 1.40, 'buy': 1.85, 'name': 'موريتانيا', 'flag': 'mr', 'code': '+222', 'enabled': True},
+    'PS': {'sell': 1.50, 'buy': 2.00, 'name': 'فلسطين', 'flag': 'ps', 'code': '+970', 'enabled': True},
+    'SO': {'sell': 1.60, 'buy': 2.10, 'name': 'الصومال', 'flag': 'so', 'code': '+252', 'enabled': True},
+    'DJ': {'sell': 1.80, 'buy': 2.40, 'name': 'جيبوتي', 'flag': 'dj', 'code': '+253', 'enabled': True},
+
+    # --- Gulf (Discounted) ---
+    'SA': {'sell': 1.90, 'buy': 2.50, 'name': 'السعودية', 'flag': 'sa', 'code': '+966', 'enabled': True},
+    'AE': {'sell': 2.10, 'buy': 2.80, 'name': 'الإمارات', 'flag': 'ae', 'code': '+971', 'enabled': True},
+    'KW': {'sell': 2.20, 'buy': 2.90, 'name': 'الكويت', 'flag': 'kw', 'code': '+965', 'enabled': True},
+    'QA': {'sell': 2.40, 'buy': 3.10, 'name': 'قطر', 'flag': 'qa', 'code': '+974', 'enabled': True},
+    'OM': {'sell': 1.80, 'buy': 2.40, 'name': 'عمان', 'flag': 'om', 'code': '+968', 'enabled': True},
+    'BH': {'sell': 1.95, 'buy': 2.60, 'name': 'البحرين', 'flag': 'bh', 'code': '+973', 'enabled': True},
+
+    # --- Africa ---
+    'NG': {'sell': 0.55, 'buy': 0.80, 'name': 'نيجيريا', 'flag': 'ng', 'code': '+234', 'enabled': True},
+    'ZA': {'sell': 0.65, 'buy': 0.95, 'name': 'جنوب أفريقيا', 'flag': 'za', 'code': '+27', 'enabled': True},
+    'KE': {'sell': 0.70, 'buy': 1.05, 'name': 'كينيا', 'flag': 'ke', 'code': '+254', 'enabled': True},
+    'GH': {'sell': 0.75, 'buy': 1.10, 'name': 'غانا', 'flag': 'gh', 'code': '+233', 'enabled': True},
+    'ET': {'sell': 0.85, 'buy': 1.20, 'name': 'إثيوبيا', 'flag': 'et', 'code': '+251', 'enabled': True},
+    'UG': {'sell': 0.90, 'buy': 1.30, 'name': 'أوغندا', 'flag': 'ug', 'code': '+256', 'enabled': True},
+    'TZ': {'sell': 0.95, 'buy': 1.35, 'name': 'تنزانيا', 'flag': 'tz', 'code': '+255', 'enabled': True},
+    'AO': {'sell': 1.10, 'buy': 1.50, 'name': 'أنغولا', 'flag': 'ao', 'code': '+244', 'enabled': True},
+    'MZ': {'sell': 1.15, 'buy': 1.55, 'name': 'موزمبيق', 'flag': 'mz', 'code': '+258', 'enabled': True},
+    'CI': {'sell': 1.20, 'buy': 1.65, 'name': 'ساحل العاج', 'flag': 'ci', 'code': '+225', 'enabled': True},
+    'SN': {'sell': 1.25, 'buy': 1.70, 'name': 'السنغال', 'flag': 'sn', 'code': '+221', 'enabled': True},
+    'CM': {'sell': 1.30, 'buy': 1.80, 'name': 'الكاميرون', 'flag': 'cm', 'code': '+237', 'enabled': True},
+    'ML': {'sell': 1.35, 'buy': 1.85, 'name': 'مالي', 'flag': 'ml', 'code': '+223', 'enabled': True},
+    'GN': {'sell': 1.40, 'buy': 1.90, 'name': 'غينيا', 'flag': 'gn', 'code': '+224', 'enabled': True},
+    'BF': {'sell': 1.45, 'buy': 1.95, 'name': 'بوركينا فاسو', 'flag': 'bf', 'code': '+226', 'enabled': True},
+    'NE': {'sell': 1.50, 'buy': 2.00, 'name': 'النيجر', 'flag': 'ne', 'code': '+227', 'enabled': True},
+    'MW': {'sell': 1.55, 'buy': 2.05, 'name': 'مالاوي', 'flag': 'mw', 'code': '+265', 'enabled': True},
+    'ZM': {'sell': 1.60, 'buy': 2.10, 'name': 'زامبيا', 'flag': 'zm', 'code': '+260', 'enabled': True},
+    'ZW': {'sell': 1.65, 'buy': 2.15, 'name': 'زيمبابوي', 'flag': 'zw', 'code': '+263', 'enabled': True},
+    'NA': {'sell': 1.70, 'buy': 2.20, 'name': 'ناميبيا', 'flag': 'na', 'code': '+264', 'enabled': True},
+    'RW': {'sell': 1.75, 'buy': 2.25, 'name': 'رواندا', 'flag': 'rw', 'code': '+250', 'enabled': True},
+    'BJ': {'sell': 1.80, 'buy': 2.30, 'name': 'بنين', 'flag': 'bj', 'code': '+229', 'enabled': True},
+    'TG': {'sell': 1.85, 'buy': 2.35, 'name': 'توغو', 'flag': 'tg', 'code': '+228', 'enabled': True},
+    'GA': {'sell': 1.90, 'buy': 2.45, 'name': 'الغابون', 'flag': 'ga', 'code': '+241', 'enabled': True},
+
+    # --- Europe & Americas ---
+    'US': {'sell': 0.60, 'buy': 0.90, 'name': 'أمريكا', 'flag': 'us', 'code': '+1', 'enabled': True},
+    'CA': {'sell': 0.80, 'buy': 1.20, 'name': 'كندا', 'flag': 'ca', 'code': '+1', 'enabled': True},
+    'GB': {'sell': 0.85, 'buy': 1.25, 'name': 'بريطانيا', 'flag': 'gb', 'code': '+44', 'enabled': True},
+    'DE': {'sell': 1.50, 'buy': 2.10, 'name': 'ألمانيا', 'flag': 'de', 'code': '+49', 'enabled': True},
+    'FR': {'sell': 1.40, 'buy': 2.00, 'name': 'فرنسا', 'flag': 'fr', 'code': '+33', 'enabled': True},
+    'NL': {'sell': 1.90, 'buy': 2.60, 'name': 'هولندا', 'flag': 'nl', 'code': '+31', 'enabled': True},
+    'ES': {'sell': 1.30, 'buy': 1.85, 'name': 'إسبانيا', 'flag': 'es', 'code': '+34', 'enabled': True},
+    'IT': {'sell': 1.35, 'buy': 1.90, 'name': 'إيطاليا', 'flag': 'it', 'code': '+39', 'enabled': True},
+    'PT': {'sell': 1.25, 'buy': 1.75, 'name': 'البرتغال', 'flag': 'pt', 'code': '+351', 'enabled': True},
+    'SE': {'sell': 2.10, 'buy': 2.90, 'name': 'السويد', 'flag': 'se', 'code': '+46', 'enabled': True},
+    'NO': {'sell': 2.30, 'buy': 3.10, 'name': 'النرويج', 'flag': 'no', 'code': '+47', 'enabled': True},
+    'FI': {'sell': 2.20, 'buy': 3.00, 'name': 'فنلندا', 'flag': 'fi', 'code': '+358', 'enabled': True},
+    'DK': {'sell': 2.15, 'buy': 2.95, 'name': 'الدنمارك', 'flag': 'dk', 'code': '+45', 'enabled': True},
+    'CH': {'sell': 2.80, 'buy': 3.80, 'name': 'سويسرا', 'flag': 'ch', 'code': '+41', 'enabled': True},
+    'AT': {'sell': 2.00, 'buy': 2.75, 'name': 'النمسا', 'flag': 'at', 'code': '+43', 'enabled': True},
+    'BE': {'sell': 1.95, 'buy': 2.65, 'name': 'بلجيكا', 'flag': 'be', 'code': '+32', 'enabled': True},
+    'GR': {'sell': 1.20, 'buy': 1.70, 'name': 'اليونان', 'flag': 'gr', 'code': '+30', 'enabled': True},
+    'CZ': {'sell': 1.10, 'buy': 1.60, 'name': 'التشيك', 'flag': 'cz', 'code': '+420', 'enabled': True},
+    'HU': {'sell': 1.05, 'buy': 1.55, 'name': 'المجر', 'flag': 'hu', 'code': '+36', 'enabled': True},
+    'BG': {'sell': 1.00, 'buy': 1.45, 'name': 'بلغاريا', 'flag': 'bg', 'code': '+359', 'enabled': True},
+    'HR': {'sell': 1.40, 'buy': 1.95, 'name': 'كرواتيا', 'flag': 'hr', 'code': '+385', 'enabled': True},
+    'RS': {'sell': 1.30, 'buy': 1.85, 'name': 'صربيا', 'flag': 'rs', 'code': '+381', 'enabled': True},
+    'SK': {'sell': 1.25, 'buy': 1.75, 'name': 'سلوفاكيا', 'flag': 'sk', 'code': '+421', 'enabled': True},
+    'SI': {'sell': 1.50, 'buy': 2.10, 'name': 'سلوفينيا', 'flag': 'si', 'code': '+386', 'enabled': True},
+    'AL': {'sell': 1.45, 'buy': 2.00, 'name': 'ألبانيا', 'flag': 'al', 'code': '+355', 'enabled': True},
+    'CY': {'sell': 1.60, 'buy': 2.25, 'name': 'قبرص', 'flag': 'cy', 'code': '+357', 'enabled': True},
+    'MT': {'sell': 2.40, 'buy': 3.20, 'name': 'مالطا', 'flag': 'mt', 'code': '+356', 'enabled': True},
+    'IS': {'sell': 3.10, 'buy': 4.20, 'name': 'آيسلندا', 'flag': 'is', 'code': '+354', 'enabled': True},
+    'LU': {'sell': 3.50, 'buy': 4.80, 'name': 'لوكسمبورغ', 'flag': 'lu', 'code': '+352', 'enabled': True},
+
+    # --- Asia (India, Pakistan, etc.) ---
+    'IN': {'sell': 0.45, 'buy': 0.70, 'name': 'الهند', 'flag': 'in', 'code': '+91', 'enabled': True},
+    'PK': {'sell': 0.50, 'buy': 0.75, 'name': 'باكستان', 'flag': 'pk', 'code': '+92', 'enabled': True},
+    'BD': {'sell': 0.55, 'buy': 0.80, 'name': 'بنغلاديش', 'flag': 'bd', 'code': '+880', 'enabled': True},
+    'LK': {'sell': 0.65, 'buy': 0.95, 'name': 'سريلانكا', 'flag': 'lk', 'code': '+94', 'enabled': True},
+    'NP': {'sell': 0.75, 'buy': 1.05, 'name': 'نيبال', 'flag': 'np', 'code': '+977', 'enabled': True},
+    'TH': {'sell': 0.80, 'buy': 1.15, 'name': 'تايلاند', 'flag': 'th', 'code': '+66', 'enabled': True},
+    'MY': {'sell': 0.85, 'buy': 1.20, 'name': 'ماليزيا', 'flag': 'my', 'code': '+60', 'enabled': True},
+    'CN': {'sell': 1.10, 'buy': 1.60, 'name': 'الصين', 'flag': 'cn', 'code': '+86', 'enabled': True},
+    'JP': {'sell': 2.90, 'buy': 3.90, 'name': 'اليابان', 'flag': 'jp', 'code': '+81', 'enabled': True},
+    'KR': {'sell': 2.70, 'buy': 3.70, 'name': 'كوريا الجنوبية', 'flag': 'kr', 'code': '+82', 'enabled': True},
+    'AU': {'sell': 2.20, 'buy': 3.00, 'name': 'أستراليا', 'flag': 'au', 'code': '+61', 'enabled': True},
+    'NZ': {'sell': 2.30, 'buy': 3.15, 'name': 'نيوزيلندا', 'flag': 'nz', 'code': '+64', 'enabled': True},
+    'SG': {'sell': 2.60, 'buy': 3.50, 'name': 'سنغافورة', 'flag': 'sg', 'code': '+65', 'enabled': True},
+    'TW': {'sell': 2.50, 'buy': 3.40, 'name': 'تايوان', 'flag': 'tw', 'code': '+886', 'enabled': True},
+    'HK': {'sell': 1.90, 'buy': 2.60, 'name': 'هونغ كونغ', 'flag': 'hk', 'code': '+852', 'enabled': True},
+
+    # --- South America ---
+    'BR': {'sell': 0.60, 'buy': 0.90, 'name': 'البرازيل', 'flag': 'br', 'code': '+55', 'enabled': True},
+    'MX': {'sell': 0.85, 'buy': 1.25, 'name': 'المكسيك', 'flag': 'mx', 'code': '+52', 'enabled': True},
+    'AR': {'sell': 0.95, 'buy': 1.35, 'name': 'الأرجنتين', 'flag': 'ar', 'code': '+54', 'enabled': True},
+    'CO': {'sell': 0.75, 'buy': 1.10, 'name': 'كولومبيا', 'flag': 'co', 'code': '+57', 'enabled': True},
+    'PE': {'sell': 0.80, 'buy': 1.20, 'name': 'بيرو', 'flag': 'pe', 'code': '+51', 'enabled': True},
+    'CL': {'sell': 1.10, 'buy': 1.55, 'name': 'تشيلي', 'flag': 'cl', 'code': '+56', 'enabled': True},
+    'EC': {'sell': 1.20, 'buy': 1.70, 'name': 'الإكوادور', 'flag': 'ec', 'code': '+593', 'enabled': True},
+    'VE': {'sell': 1.40, 'buy': 1.95, 'name': 'فنزويلا', 'flag': 've', 'code': '+58', 'enabled': True},
+    'BO': {'sell': 1.15, 'buy': 1.60, 'name': 'بوليفيا', 'flag': 'bo', 'code': '+591', 'enabled': True},
+    'PY': {'sell': 1.30, 'buy': 1.85, 'name': 'باراغواي', 'flag': 'py', 'code': '+595', 'enabled': True},
+    'UY': {'sell': 1.70, 'buy': 2.30, 'name': 'أوروغواي', 'flag': 'uy', 'code': '+598', 'enabled': True},
+    'CR': {'sell': 1.90, 'buy': 2.60, 'name': 'كوستاريكا', 'flag': 'cr', 'code': '+506', 'enabled': True},
+    'PA': {'sell': 2.00, 'buy': 2.75, 'name': 'بنما', 'flag': 'pa', 'code': '+507', 'enabled': True},
+    'GT': {'sell': 1.60, 'buy': 2.20, 'name': 'غواتيمالا', 'flag': 'gt', 'code': '+502', 'enabled': True},
+    'SV': {'sell': 1.55, 'buy': 2.15, 'name': 'السلفادور', 'flag': 'sv', 'code': '+503', 'enabled': True},
 }
 
 DEFAULT_SETTINGS = {
     'minDeposit': 0.1,
     'minWithdrawal': 3.0,
-    'referralBonus': 0.15,
-    'fraudThreshold': 0.65,
+    'referralBonus': 0.05,
+    'referralBonusNewUser': 0.05,
+    'fraudThreshold': 0.80, # High sensitivity for fingerprint
     'maintenanceMode': False,
     'registrationEnabled': True,
     'buyEnabled': True,
@@ -170,7 +178,9 @@ DEFAULT_SETTINGS = {
     'siteLogo': '',
     'siteColor': '#0088cc',
     'fakeMode': False,
-    'fakeStockCount': 4713
+    'fakeStockCount': 5000,
+    'fakeStockRandom': True,
+    'fakeStockOut': False
 }
 
 # ============== Firebase ==============
@@ -244,6 +254,7 @@ def detect_country(phone):
     return matched
 
 def get_fingerprint(req):
+    # Server side info
     return {
         'ip': req.headers.get('X-Forwarded-For', req.headers.get('X-Real-IP', req.remote_addr)),
         'ua': req.headers.get('User-Agent', ''),
@@ -253,18 +264,18 @@ def get_fingerprint(req):
 def check_fraud(user_id, fingerprint):
     fps = fb_get('fingerprints') or {}
     settings = get_settings()
-    threshold = settings.get('fraudThreshold', 0.65)
+    threshold = settings.get('fraudThreshold', 0.80)
     
     for fp_id, fp_data in fps.items():
         if fp_data and fp_data.get('userId') != user_id:
             matches = 0
-            total = 3
-            if fp_data.get('ip') == fingerprint.get('ip'):
-                matches += 1
-            if fp_data.get('ua') == fingerprint.get('ua'):
-                matches += 1
-            if fp_data.get('lang') == fingerprint.get('lang'):
-                matches += 1
+            # Comparing 9 keys (ignoring IP for multi-device but catching same hardware)
+            keys = ['ua', 'lang', 'canvas', 'webgl', 'cores', 'memory', 'touch', 'screen', 'timezone']
+            total = len(keys)
+            
+            for k in keys:
+                if fp_data.get(k) and fp_data.get(k) == fingerprint.get(k):
+                    matches += 1
             
             similarity = matches / total
             if similarity >= threshold:
@@ -385,11 +396,6 @@ async def tg_get_messages(session_str):
 
 # ============== Deposit Verification ==============
 def verify_bsc_tx(txid, expected_amount=None):
-    """
-    التحقق من المعاملة.
-    إذا تم تمرير expected_amount، نتأكد أن المبلغ المودع يساويه (بما فيه الرسوم).
-    إذا لم يمرر، نقبل أي مبلغ أعلى من الحد الأدنى.
-    """
     try:
         r = requests.get(f"https://api.bscscan.com/api", params={
             'module': 'proxy',
@@ -405,7 +411,6 @@ def verify_bsc_tx(txid, expected_amount=None):
         tx = data['result']
         to = tx.get('to', '').lower()
         
-        # 1. Check USDT Transfer
         if to == USDT_CONTRACT_BSC.lower():
             inp = tx.get('input', '')
             if inp.startswith('0xa9059cbb'):
@@ -414,19 +419,14 @@ def verify_bsc_tx(txid, expected_amount=None):
                     amount_raw = int(inp[74:138], 16)
                     amount = amount_raw / 1e18
                     
-                    # Minimum deposit check
                     if amount < 0.1: 
                         return False, 0, "الحد الأدنى للإيداع 0.1$"
                     
-                    # Expected amount check (for deposit request)
                     if expected_amount and abs(amount - expected_amount) > 0.0001:
                         return False, 0, f"المبلغ لا يطابق. المطلوب: {expected_amount}، المستلم: {amount:.2f}"
                     
                     return True, amount, "تم التحقق من USDT"
         
-        # 2. Check BNB Transfer (Optional logic, keeping simplified for USDT focus)
-        # Could be added here if needed for BNB deposits
-
         return False, 0, "المعاملة ليست تحويل USDT صالح للمحفظة المحددة"
     except Exception as e:
         return False, 0, str(e)
@@ -457,7 +457,13 @@ def stats():
     sold = sum(1 for n in numbers.values() if n and n.get('status') == 'sold')
     
     if settings.get('fakeMode'):
-        available = settings.get('fakeStockCount', 4713)
+        if settings.get('fakeStockOut'):
+            available = 0
+        elif settings.get('fakeStockRandom'):
+            total = settings.get('fakeStockCount', 5000)
+            available = total - random.randint(0, int(total * 0.1))
+        else:
+            available = settings.get('fakeStockCount', 5000)
     
     return jsonify({
         'availableNumbers': available,
@@ -478,10 +484,14 @@ def countries_api():
         if info and info.get('enabled', True):
             count = sum(1 for n in numbers.values() if n and n.get('status') == 'available' and n.get('country') == code)
             
-            if settings.get('fakeMode'):
-                import hashlib
-                hash_val = int(hashlib.md5(code.encode()).hexdigest(), 16) % 500
-                count = settings.get('fakeStockCount', 4713) - hash_val
+            if settings.get('fakeMode') and not settings.get('fakeStockOut'):
+                if settings.get('fakeStockRandom'):
+                    base = random.randint(0, settings.get('fakeStockCount', 5000) // 2)
+                    count = base + random.randint(0, 1000)
+                else:
+                    count = settings.get('fakeStockCount', 5000)
+            elif settings.get('fakeStockOut'):
+                count = 0
             
             result.append({
                 'code': code,
@@ -504,7 +514,7 @@ def settings_api():
         'registrationEnabled': s.get('registrationEnabled', True),
         'buyEnabled': s.get('buyEnabled', True),
         'sellEnabled': s.get('sellEnabled', True),
-        'referralBonus': s.get('referralBonus', 0.15),
+        'referralBonus': s.get('referralBonus', 0.05),
         'siteName': s.get('siteName', 'TeleNum'),
         'siteColor': s.get('siteColor', '#0088cc')
     })
@@ -518,13 +528,10 @@ def register():
     password = data.get('password', '')
     ref_code = data.get('referralCode', '').strip()
     device_id = data.get('deviceId')
+    fingerprint_data = data.get('fingerprint', {})
     
     if not all([username, email, password]):
         return jsonify({'success': False, 'error': 'جميع الحقول مطلوبة'})
-    if len(password) < 6:
-        return jsonify({'success': False, 'error': 'كلمة المرور قصيرة'})
-    if len(username) < 3:
-        return jsonify({'success': False, 'error': 'الاسم قصير'})
     
     users = fb_get('users') or {}
     for u in users.values():
@@ -532,23 +539,16 @@ def register():
             return jsonify({'success': False, 'error': 'البريد مستخدم'})
     
     fp = get_fingerprint(request)
+    fp.update(fingerprint_data)
+    
     token = generate_token()
     my_ref = generate_referral_code()
     
     new_user = {
-        'username': username,
-        'email': email,
-        'password': hash_password(password),
-        'balance': 0.0,
-        'token': token,
-        'referralCode': my_ref,
-        'referredBy': None,
-        'referralCount': 0,
-        'referralEarnings': 0.0,
-        'banned': False,
-        'createdAt': datetime.now().isoformat(),
-        'fingerprint': fp,
-        'deviceId': device_id
+        'username': username, 'email': email, 'password': hash_password(password),
+        'balance': 0.0, 'token': token, 'referralCode': my_ref, 'referredBy': None,
+        'referralCount': 0, 'referralEarnings': 0.0, 'banned': False,
+        'createdAt': datetime.now().isoformat(), 'fingerprint': fp, 'deviceId': device_id
     }
     
     uid = fb_push('users', new_user)
@@ -562,23 +562,22 @@ def register():
                     is_fraud, fraud_uid, sim = check_fraud(uid, fp)
                     if is_fraud:
                         fb_update(f'users/{uid}', {'banned': True, 'banReason': f'احتيال ({sim*100:.0f}%)'})
-                        fb_push('fraud_logs', {'newUser': uid, 'matched': fraud_uid, 'similarity': sim, 'createdAt': datetime.now().isoformat()})
                         return jsonify({'success': False, 'error': 'تم اكتشاف نشاط مشبوه'})
                     
                     settings = get_settings()
-                    bonus = settings.get('referralBonus', 0.15)
+                    bonus_referrer = settings.get('referralBonus', 0.05)
+                    bonus_new = settings.get('referralBonusNewUser', 0.05)
+                    
                     fb_update(f'users/{ref_uid}', {
-                        'balance': ref_user.get('balance', 0) + bonus,
+                        'balance': ref_user.get('balance', 0) + bonus_referrer,
                         'referralCount': ref_user.get('referralCount', 0) + 1,
-                        'referralEarnings': ref_user.get('referralEarnings', 0) + bonus
+                        'referralEarnings': ref_user.get('referralEarnings', 0) + bonus_referrer
                     })
-                    fb_update(f'users/{uid}', {'referredBy': ref_uid})
+                    
+                    fb_update(f'users/{uid}', {'balance': bonus_new, 'referredBy': ref_uid})
                     break
         
-        return jsonify({
-            'success': True,
-            'user': {'id': uid, 'username': username, 'email': email, 'balance': 0.0, 'token': token, 'referralCode': my_ref, 'referralCount': 0, 'referralEarnings': 0.0}
-        })
+        return jsonify({'success': True, 'user': {'id': uid, 'username': username, 'email': email, 'balance': 0.0, 'token': token, 'referralCode': my_ref}})
     
     return jsonify({'success': False, 'error': 'حدث خطأ'})
 
@@ -588,29 +587,22 @@ def login():
     email = data.get('email', '').strip().lower()
     password = data.get('password', '')
     device_id = data.get('deviceId')
+    fingerprint_data = data.get('fingerprint', {})
     
     users = fb_get('users') or {}
     for uid, u in users.items():
         if u and u.get('email') == email and u.get('password') == hash_password(password):
-            if u.get('banned'):
-                return jsonify({'success': False, 'error': f"حسابك محظور: {u.get('banReason', '')}"})
+            if u.get('banned'): return jsonify({'success': False, 'error': f"محظور: {u.get('banReason', '')}"})
             
             token = generate_token()
-            update_data = {'token': token, 'lastLogin': datetime.now().isoformat()}
-            if device_id:
-                update_data['deviceId'] = device_id
+            fp = get_fingerprint(request)
+            fp.update(fingerprint_data)
             
-            fb_update(f'users/{uid}', update_data)
+            fb_update(f'users/{uid}', {'token': token, 'lastLogin': datetime.now().isoformat(), 'deviceId': device_id, 'fingerprint': fp})
             
             return jsonify({
                 'success': True,
-                'user': {
-                    'id': uid, 'username': u.get('username'), 'email': email,
-                    'balance': u.get('balance', 0), 'token': token,
-                    'referralCode': u.get('referralCode'),
-                    'referralCount': u.get('referralCount', 0),
-                    'referralEarnings': u.get('referralEarnings', 0)
-                }
+                'user': {'id': uid, 'username': u.get('username'), 'email': email, 'balance': u.get('balance', 0), 'token': token, 'referralCode': u.get('referralCode'), 'referralCount': u.get('referralCount', 0), 'referralEarnings': u.get('referralEarnings', 0)}
             })
     
     return jsonify({'success': False, 'error': 'بيانات غير صحيحة'})
@@ -619,50 +611,35 @@ def login():
 def auto_login():
     data = request.json or {}
     device_id = data.get('deviceId')
+    fingerprint_data = data.get('fingerprint', {})
     
-    if not device_id:
-        return jsonify({'success': False, 'error': 'No device ID'})
+    if not device_id: return jsonify({'success': False, 'error': 'No ID'})
+
+    current_fp = get_fingerprint(request)
+    current_fp.update(fingerprint_data)
 
     users = fb_get('users') or {}
     for uid, u in users.items():
         if u and u.get('deviceId') == device_id:
-            if u.get('banned'):
-                return jsonify({'success': False, 'error': 'محظور'})
+            if u.get('banned'): return jsonify({'success': False, 'error': 'محظور'})
             
-            token = generate_token()
-            fb_update(f'users/{uid}', {'token': token, 'lastLogin': datetime.now().isoformat()})
+            stored_fp = u.get('fingerprint', {})
+            matches = 0
+            keys = ['ua', 'lang', 'canvas', 'webgl', 'cores', 'memory', 'touch', 'screen', 'timezone']
+            for k in keys:
+                if stored_fp.get(k) and stored_fp.get(k) == current_fp.get(k): matches += 1
             
-            return jsonify({
-                'success': True,
-                'user': {
-                    'id': uid,
-                    'username': u.get('username'),
-                    'email': u.get('email'),
-                    'balance': u.get('balance', 0),
-                    'token': token,
-                    'referralCode': u.get('referralCode'),
-                    'referralCount': u.get('referralCount', 0),
-                    'referralEarnings': u.get('referralEarnings', 0)
-                }
-            })
+            if matches / len(keys) >= 0.80:
+                token = generate_token()
+                fb_update(f'users/{uid}', {'token': token, 'lastLogin': datetime.now().isoformat()})
+                return jsonify({'success': True, 'user': {'id': uid, 'username': u.get('username'), 'email': u.get('email'), 'balance': u.get('balance', 0), 'token': token, 'referralCode': u.get('referralCode'), 'referralCount': u.get('referralCount', 0), 'referralEarnings': u.get('referralEarnings', 0)}})
     
     return jsonify({'success': False, 'error': 'لم يتم العثور على جلسة'})
 
 @app.route('/api/auth/me')
 @verify_token
 def me():
-    return jsonify({
-        'success': True,
-        'user': {
-            'id': request.user_id,
-            'username': request.user.get('username'),
-            'email': request.user.get('email'),
-            'balance': request.user.get('balance', 0),
-            'referralCode': request.user.get('referralCode'),
-            'referralCount': request.user.get('referralCount', 0),
-            'referralEarnings': request.user.get('referralEarnings', 0)
-        }
-    })
+    return jsonify({'success': True, 'user': {'id': request.user_id, 'username': request.user.get('username'), 'email': request.user.get('email'), 'balance': request.user.get('balance', 0), 'referralCode': request.user.get('referralCode'), 'referralCount': request.user.get('referralCount', 0), 'referralEarnings': request.user.get('referralEarnings', 0)}})
 
 # Buy
 @app.route('/api/buy', methods=['POST'])
@@ -670,45 +647,26 @@ def me():
 def buy():
     data = request.json or {}
     country = data.get('country')
-    
     countries = get_countries()
-    if country not in countries:
-        return jsonify({'success': False, 'error': 'دولة غير مدعومة'})
+    if country not in countries: return jsonify({'success': False, 'error': 'دولة غير مدعومة'})
     
     info = countries[country]
     price = info['buy']
     balance = request.user.get('balance', 0)
-    
-    if balance < price:
-        return jsonify({'success': False, 'error': 'رصيد غير كافٍ'})
+    if balance < price: return jsonify({'success': False, 'error': 'رصيد غير كافٍ'})
     
     numbers = fb_get('numbers') or {}
     target = None
     target_id = None
-    
     for nid, n in numbers.items():
         if n and n.get('status') == 'available' and n.get('country') == country:
-            target = n
-            target_id = nid
-            break
+            target = n; target_id = nid; break
     
-    if not target:
-        return jsonify({'success': False, 'error': 'لا توجد أرقام'})
+    if not target: return jsonify({'success': False, 'error': 'لا توجد أرقام'})
     
     new_balance = balance - price
     fb_update(f'users/{request.user_id}', {'balance': new_balance})
-    
-    purchase_id = fb_push('purchases', {
-        'userId': request.user_id,
-        'numberId': target_id,
-        'phone': target['phone'],
-        'country': country,
-        'price': price,
-        'session': target.get('session'),
-        'status': 'active',
-        'createdAt': datetime.now().isoformat()
-    })
-    
+    purchase_id = fb_push('purchases', {'userId': request.user_id, 'numberId': target_id, 'phone': target['phone'], 'country': country, 'price': price, 'session': target.get('session'), 'status': 'active', 'createdAt': datetime.now().isoformat()})
     fb_update(f'numbers/{target_id}', {'status': 'sold', 'soldTo': request.user_id})
     
     return jsonify({'success': True, 'purchaseId': purchase_id, 'phone': target['phone'], 'newBalance': new_balance})
@@ -717,29 +675,21 @@ def buy():
 @verify_token
 def messages(purchase_id):
     purchase = fb_get(f'purchases/{purchase_id}')
-    if not purchase or purchase.get('userId') != request.user_id:
-        return jsonify({'success': False, 'error': 'غير موجود'})
-    
+    if not purchase or purchase.get('userId') != request.user_id: return jsonify({'success': False, 'error': 'غير موجود'})
     session = purchase.get('session')
-    if not session:
-        return jsonify({'success': True, 'messages': []})
-    
+    if not session: return jsonify({'success': True, 'messages': []})
     try:
         msgs = run_async(tg_get_messages(session))
         return jsonify({'success': True, 'messages': msgs})
-    except:
-        return jsonify({'success': True, 'messages': []})
+    except: return jsonify({'success': True, 'messages': []})
 
 @app.route('/api/complete', methods=['POST'])
 @verify_token
 def complete():
     data = request.json or {}
     purchase_id = data.get('purchaseId')
-    
     purchase = fb_get(f'purchases/{purchase_id}')
-    if not purchase or purchase.get('userId') != request.user_id:
-        return jsonify({'success': False, 'error': 'غير موجود'})
-    
+    if not purchase or purchase.get('userId') != request.user_id: return jsonify({'success': False, 'error': 'غير موجود'})
     fb_update(f'purchases/{purchase_id}', {'status': 'completed', 'completedAt': datetime.now().isoformat()})
     return jsonify({'success': True})
 
@@ -760,22 +710,16 @@ def my_numbers():
 def sell_send():
     data = request.json or {}
     phone = data.get('phone', '').strip()
-    
-    if not phone.startswith('+'):
-        return jsonify({'success': False, 'error': 'الرقم يجب أن يبدأ بـ +'})
-    
+    if not phone.startswith('+'): return jsonify({'success': False, 'error': 'الرقم يجب أن يبدأ بـ +'})
     country = detect_country(phone)
-    if not country:
-        return jsonify({'success': False, 'error': 'دولة غير مدعومة'})
-    
+    if not country: return jsonify({'success': False, 'error': 'دولة غير مدعومة'})
     try:
         success, msg = run_async(tg_send_code(phone))
         if success:
             countries = get_countries()
             return jsonify({'success': True, 'country': country, 'countryName': countries[country]['name'], 'price': countries[country]['sell']})
         return jsonify({'success': False, 'error': msg})
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)})
+    except Exception as e: return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/api/sell/verify', methods=['POST'])
 @verify_token
@@ -785,102 +729,64 @@ def sell_verify():
     code = data.get('code', '').strip()
     password = data.get('password')
     
-    if not phone or not code:
-        return jsonify({'success': False, 'error': 'بيانات ناقصة'})
-    
+    if not phone or not code: return jsonify({'success': False, 'error': 'بيانات ناقصة'})
     country = detect_country(phone)
-    if not country:
-        return jsonify({'success': False, 'error': 'دولة غير مدعومة'})
+    if not country: return jsonify({'success': False, 'error': 'دولة غير مدعومة'})
     
     try:
         success, msg, session = run_async(tg_verify(phone, code, password))
-        
         if not success:
-            if msg == "2FA_REQUIRED":
-                 return jsonify({'success': False, 'error': '2FA_REQUIRED', 'message': 'هذا الرقم محمي بكلمة مرور ثنائية.'})
+            if msg == "2FA_REQUIRED": return jsonify({'success': False, 'error': '2FA_REQUIRED', 'message': 'هذا الرقم محمي بكلمة مرور ثنائية.'})
             return jsonify({'success': False, 'error': msg})
         
         countries = get_countries()
         price = countries[country]['sell']
-        
-        fb_push('sell_requests', {
-            'userId': request.user_id,
-            'username': request.user.get('username'),
-            'phone': phone,
-            'country': country,
-            'price': price,
-            'session': session,
-            'status': 'pending',
-            'createdAt': datetime.now().isoformat()
-        })
-        
+        fb_push('sell_requests', {'userId': request.user_id, 'username': request.user.get('username'), 'phone': phone, 'country': country, 'price': price, 'session': session, 'status': 'pending', 'createdAt': datetime.now().isoformat()})
         return jsonify({'success': True})
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)})
+    except Exception as e: return jsonify({'success': False, 'error': str(e)})
 
-# Deposit - Auto Verification
+# Deposit
 @app.route('/api/deposit', methods=['POST'])
 @verify_token
 def deposit():
     data = request.json or {}
     txid = data.get('txid', '').strip()
-    expected_amount = data.get('amount') # المبلغ الذي يريده المستخدم (شامل الرسوم)
+    expected_amount = data.get('amount')
     
-    if not txid.startswith('0x') or len(txid) < 60:
-        return jsonify({'success': False, 'error': 'TXID غير صحيح'})
+    if not txid.startswith('0x') or len(txid) < 60: return jsonify({'success': False, 'error': 'TXID غير صحيح'})
     
     deposits = fb_get('deposits') or {}
     for d in deposits.values():
-        if d and d.get('txid') == txid:
-            return jsonify({'success': False, 'error': 'المعاملة مستخدمة سابقاً'})
+        if d and d.get('txid') == txid: return jsonify({'success': False, 'error': 'المعاملة مستخدمة'})
     
-    # التحقق من المعاملة
     valid, amount, msg = verify_bsc_tx(txid, expected_amount)
-    
-    if not valid:
-        return jsonify({'success': False, 'error': msg or 'المعاملة غير صالحة أو المبلغ غير مطابق'})
-    
-    # إذا لم يحدد المستخدم مبلغ، نأخذ المبلغ الفعلي من المعاملة
-    # أو إذا حدد، نستخدم المبلغ الفعلي (لأن التحقق تم)
+    if not valid: return jsonify({'success': False, 'error': msg or 'المعاملة غير صالحة'})
     
     fb_push('deposits', {'userId': request.user_id, 'txid': txid, 'amount': amount, 'status': 'approved', 'createdAt': datetime.now().isoformat()})
-    
     new_balance = request.user.get('balance', 0) + amount
     fb_update(f'users/{request.user_id}', {'balance': new_balance})
     
     return jsonify({'success': True, 'amount': amount, 'newBalance': new_balance})
 
-# Withdraw - User specifies wallet
+# Withdraw
 @app.route('/api/withdraw', methods=['POST'])
 @verify_token
 def withdraw():
     data = request.json or {}
     amount = float(data.get('amount', 0))
     address = data.get('address', '').strip()
-    
     settings = get_settings()
     min_w = settings.get('minWithdrawal', 3.0)
     
-    if amount < min_w:
-        return jsonify({'success': False, 'error': f'الحد الأدنى ${min_w}'})
-    if not address.startswith('0x') or len(address) != 42:
-        return jsonify({'success': False, 'error': 'عنوان محفظة السحب غير صحيح'})
+    if amount < min_w: return jsonify({'success': False, 'error': f'الحد الأدنى ${min_w}'})
+    if not address.startswith('0x') or len(address) != 42: return jsonify({'success': False, 'error': 'عنوان غير صحيح'})
     
     balance = request.user.get('balance', 0)
-    if balance < amount:
-        return jsonify({'success': False, 'error': 'رصيد غير كافٍ'})
+    if balance < amount: return jsonify({'success': False, 'error': 'رصيد غير كافٍ'})
     
     new_balance = balance - amount
     fb_update(f'users/{request.user_id}', {'balance': new_balance})
-    
-    fb_push('withdrawals', {
-        'userId': request.user_id,
-        'username': request.user.get('username'),
-        'amount': amount,
-        'address': address, # المحفظة التي يريد المستخدم الإرسال إليها
-        'status': 'pending',
-        'createdAt': datetime.now().isoformat()
-    })
+    fb_push('withdrawals', {'userId': request.user_id, 'username': request.user.get('username'), 'amount': amount, 'address': address, 'status': 'pending', 'createdAt': datetime.now().isoformat()})
     
     return jsonify({'success': True, 'newBalance': new_balance})
 
@@ -895,24 +801,14 @@ def admin_sells():
 def admin_approve_sell():
     data = request.json or {}
     sell_id = data.get('id')
-    
     sell = fb_get(f'sell_requests/{sell_id}')
-    if not sell:
-        return jsonify({'success': False, 'error': 'غير موجود'})
+    if not sell: return jsonify({'success': False, 'error': 'غير موجود'})
     
     countries = get_countries()
     country = sell.get('country')
     buy_price = countries.get(country, {}).get('buy', 1.0)
     
-    fb_push('numbers', {
-        'phone': sell['phone'],
-        'country': country,
-        'price': buy_price,
-        'session': sell.get('session'),
-        'status': 'available',
-        'createdAt': datetime.now().isoformat()
-    })
-    
+    fb_push('numbers', {'phone': sell['phone'], 'country': country, 'price': buy_price, 'session': sell.get('session'), 'status': 'available', 'createdAt': datetime.now().isoformat()})
     fb_update(f'sell_requests/{sell_id}', {'status': 'approved'})
     
     user = fb_get(f"users/{sell['userId']}")
@@ -947,14 +843,12 @@ def admin_approve_wth():
 def admin_reject_wth():
     data = request.json or {}
     wid = data.get('id')
-    
     wth = fb_get(f'withdrawals/{wid}')
     if wth:
         user = fb_get(f"users/{wth['userId']}")
         if user:
             new_bal = user.get('balance', 0) + wth.get('amount', 0)
             fb_update(f"users/{wth['userId']}", {'balance': new_bal})
-    
     fb_update(f"withdrawals/{wid}", {'status': 'rejected', 'reason': data.get('reason', '')})
     return jsonify({'success': True})
 
@@ -964,43 +858,8 @@ def admin_users():
     result = []
     for uid, u in users.items():
         if u:
-            result.append({
-                'id': uid,
-                'username': u.get('username'),
-                'email': u.get('email'),
-                'balance': u.get('balance', 0),
-                'referralCode': u.get('referralCode'),
-                'referralCount': u.get('referralCount', 0),
-                'banned': u.get('banned', False)
-            })
+            result.append({'id': uid, 'username': u.get('username'), 'email': u.get('email'), 'balance': u.get('balance', 0), 'referralCode': u.get('referralCode'), 'referralCount': u.get('referralCount', 0), 'banned': u.get('banned', False)})
     return jsonify({'success': True, 'users': result})
-
-@app.route('/api/admin/user/<uid>', methods=['GET'])
-def admin_get_user(uid):
-    user = fb_get(f'users/{uid}')
-    if not user:
-        return jsonify({'success': False, 'error': 'User not found'})
-    
-    purchases = fb_get('purchases') or {}
-    sells = fb_get('sell_requests') or {}
-    deposits = fb_get('deposits') or {}
-    
-    user_purchases = [p for p in purchases.values() if p and p.get('userId') == uid]
-    user_sells = [s for s in sells.values() if s and s.get('userId') == uid]
-    user_deposits = [d for d in deposits.values() if d and d.get('userId') == uid]
-    
-    return jsonify({
-        'success': True,
-        'user': {
-            'id': uid,
-            **user,
-            'stats': {
-                'totalPurchases': len(user_purchases),
-                'totalSells': len(user_sells),
-                'totalDeposits': len(user_deposits)
-            }
-        }
-    })
 
 @app.route('/api/admin/user/<uid>/ban', methods=['POST'])
 def admin_ban(uid):
@@ -1017,14 +876,10 @@ def admin_unban(uid):
 def admin_add_balance(uid):
     data = request.json or {}
     amount = float(data.get('amount', 0))
-    
     user = fb_get(f'users/{uid}')
-    if not user:
-        return jsonify({'success': False, 'error': 'غير موجود'})
-    
+    if not user: return jsonify({'success': False, 'error': 'غير موجود'})
     new_bal = user.get('balance', 0) + amount
     fb_update(f'users/{uid}', {'balance': new_bal})
-    
     return jsonify({'success': True, 'newBalance': new_bal})
 
 @app.route('/api/admin/numbers')
@@ -1043,12 +898,10 @@ def admin_del_number():
 def admin_send_code():
     data = request.json or {}
     phone = data.get('phone', '').strip()
-    
     try:
         success, msg = run_async(tg_send_code(phone))
         return jsonify({'success': success, 'message': msg})
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)})
+    except Exception as e: return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/api/admin/add-verify', methods=['POST'])
 def admin_verify_code():
@@ -1056,31 +909,17 @@ def admin_verify_code():
     phone = data.get('phone', '').strip()
     code = data.get('code', '').strip()
     password = data.get('password')
-    
     country = detect_country(phone)
-    if not country:
-        return jsonify({'success': False, 'error': 'دولة غير مدعومة'})
-    
+    if not country: return jsonify({'success': False, 'error': 'دولة غير مدعومة'})
     try:
         success, msg, session = run_async(tg_verify(phone, code, password))
         if not success:
-             if msg == "2FA_REQUIRED":
-                 return jsonify({'success': False, 'error': '2FA_REQUIRED', 'message': 'هذا الرقم محمي بكلمة مرور ثنائية.'})
-             return jsonify({'success': False, 'error': msg})
-        
+            if msg == "2FA_REQUIRED": return jsonify({'success': False, 'error': '2FA_REQUIRED', 'message': 'هذا الرقم محمي بكلمة مرور ثنائية.'})
+            return jsonify({'success': False, 'error': msg})
         countries = get_countries()
-        fb_push('numbers', {
-            'phone': phone,
-            'country': country,
-            'price': countries[country]['buy'],
-            'session': session,
-            'status': 'available',
-            'createdAt': datetime.now().isoformat()
-        })
-        
+        fb_push('numbers', {'phone': phone, 'country': country, 'price': countries[country]['buy'], 'session': session, 'status': 'available', 'createdAt': datetime.now().isoformat()})
         return jsonify({'success': True})
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)})
+    except Exception as e: return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/api/admin/dashboard')
 def admin_dashboard():
@@ -1089,19 +928,8 @@ def admin_dashboard():
     sells = fb_get('sell_requests') or {}
     wths = fb_get('withdrawals') or {}
     deposits = fb_get('deposits') or {}
-    
     total_volume = sum(d.get('amount', 0) for d in deposits.values() if d and d.get('status') == 'approved')
-    
-    return jsonify({
-        'success': True,
-        'stats': {
-            'totalUsers': len([u for u in users.values() if u]),
-            'availableNumbers': sum(1 for n in numbers.values() if n and n.get('status') == 'available'),
-            'pendingSells': sum(1 for s in sells.values() if s and s.get('status') == 'pending'),
-            'pendingWithdrawals': sum(1 for w in wths.values() if w and w.get('status') == 'pending'),
-            'totalDepositsVolume': total_volume
-        }
-    })
+    return jsonify({'success': True, 'stats': {'totalUsers': len([u for u in users.values() if u]), 'availableNumbers': sum(1 for n in numbers.values() if n and n.get('status') == 'available'), 'pendingSells': sum(1 for s in sells.values() if s and s.get('status') == 'pending'), 'pendingWithdrawals': sum(1 for w in wths.values() if w and w.get('status') == 'pending'), 'totalDepositsVolume': total_volume}})
 
 @app.route('/api/admin/settings')
 def admin_get_settings():
@@ -1122,16 +950,8 @@ def admin_add_country():
     data = request.json or {}
     code = data.get('code')
     if not code: return jsonify({'success': False, 'error': 'Code required'})
-    
     countries = get_countries()
-    countries[code] = {
-        'name': data.get('name'),
-        'flag': data.get('flag'),
-        'code': data.get('phoneCode'),
-        'buy': data.get('buyPrice'),
-        'sell': data.get('sellPrice'),
-        'enabled': True
-    }
+    countries[code] = {'name': data.get('name'), 'flag': data.get('flag'), 'code': data.get('phoneCode'), 'buy': data.get('buyPrice'), 'sell': data.get('sellPrice'), 'enabled': True}
     fb_set('countries', countries)
     return jsonify({'success': True})
 
@@ -1148,7 +968,6 @@ def admin_update_country(code):
         return jsonify({'success': True})
     return jsonify({'success': False, 'error': 'Not found'})
 
-# Error handler
 @app.errorhandler(Exception)
 def handle_error(e):
     return jsonify({'success': False, 'error': str(e)}), 500
