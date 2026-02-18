@@ -26,8 +26,9 @@ FIREBASE_URL = "https://lolaminig-afea4-default-rtdb.firebaseio.com"
 executor = ThreadPoolExecutor(max_workers=4)
 phone_sessions = {}
 
-# ============== Default Data ==============
+# ============== Default Data (120+ Countries) ==============
 DEFAULT_COUNTRIES = {
+    # --- Top Countries ---
     'US': {'sell': 0.75, 'buy': 0.95, 'name': 'الولايات المتحدة', 'flag': 'us', 'code': '+1', 'enabled': True},
     'UK': {'sell': 0.80, 'buy': 1.00, 'name': 'المملكة المتحدة', 'flag': 'gb', 'code': '+44', 'enabled': True},
     'CA': {'sell': 0.25, 'buy': 0.45, 'name': 'كندا', 'flag': 'ca', 'code': '+1', 'enabled': True},
@@ -40,13 +41,14 @@ DEFAULT_COUNTRIES = {
     'AE': {'sell': 0.90, 'buy': 1.10, 'name': 'الإمارات', 'flag': 'ae', 'code': '+971', 'enabled': True},
     'EG': {'sell': 0.40, 'buy': 0.60, 'name': 'مصر', 'flag': 'eg', 'code': '+20', 'enabled': True},
     'TR': {'sell': 0.55, 'buy': 0.75, 'name': 'تركيا', 'flag': 'tr', 'code': '+90', 'enabled': True},
+    'SY': {'sell': 0.30, 'buy': 0.50, 'name': 'سوريا', 'flag': 'sy', 'code': '+963', 'enabled': True},
     'IN': {'sell': 0.30, 'buy': 0.50, 'name': 'الهند', 'flag': 'in', 'code': '+91', 'enabled': True},
     'BR': {'sell': 0.50, 'buy': 0.70, 'name': 'البرازيل', 'flag': 'br', 'code': '+55', 'enabled': True},
     'RU': {'sell': 0.60, 'buy': 0.80, 'name': 'روسيا', 'flag': 'ru', 'code': '+7', 'enabled': True},
     'ES': {'sell': 0.90, 'buy': 1.10, 'name': 'إسبانيا', 'flag': 'es', 'code': '+34', 'enabled': True},
     'IT': {'sell': 0.85, 'buy': 1.05, 'name': 'إيطاليا', 'flag': 'it', 'code': '+39', 'enabled': True},
     'JP': {'sell': 1.30, 'buy': 1.50, 'name': 'اليابان', 'flag': 'jp', 'code': '+81', 'enabled': True},
-    'KR': {'sell': 1.20, 'buy': 1.40, 'name': 'كوريا', 'flag': 'kr', 'code': '+82', 'enabled': True},
+    'KR': {'sell': 1.20, 'buy': 1.40, 'name': 'كوريا الجنوبية', 'flag': 'kr', 'code': '+82', 'enabled': True},
     'ID': {'sell': 0.35, 'buy': 0.55, 'name': 'إندونيسيا', 'flag': 'id', 'code': '+62', 'enabled': True},
     'MX': {'sell': 0.45, 'buy': 0.65, 'name': 'المكسيك', 'flag': 'mx', 'code': '+52', 'enabled': True},
     'AR': {'sell': 0.40, 'buy': 0.60, 'name': 'الأرجنتين', 'flag': 'ar', 'code': '+54', 'enabled': True},
@@ -83,19 +85,87 @@ DEFAULT_COUNTRIES = {
     'CZ': {'sell': 0.80, 'buy': 1.00, 'name': 'التشيك', 'flag': 'cz', 'code': '+420', 'enabled': True},
     'RO': {'sell': 0.60, 'buy': 0.80, 'name': 'رومانيا', 'flag': 'ro', 'code': '+40', 'enabled': True},
     'HU': {'sell': 0.70, 'buy': 0.90, 'name': 'المجر', 'flag': 'hu', 'code': '+36', 'enabled': True},
+    # --- Rest of the world ---
+    'CN': {'sell': 0.50, 'buy': 0.70, 'name': 'الصين', 'flag': 'cn', 'code': '+86', 'enabled': True},
+    'HK': {'sell': 1.10, 'buy': 1.30, 'name': 'هونغ كونغ', 'flag': 'hk', 'code': '+852', 'enabled': True},
+    'TW': {'sell': 0.90, 'buy': 1.10, 'name': 'تايوان', 'flag': 'tw', 'code': '+886', 'enabled': True},
+    'KW': {'sell': 0.80, 'buy': 1.00, 'name': 'الكويت', 'flag': 'kw', 'code': '+965', 'enabled': True},
+    'BH': {'sell': 0.75, 'buy': 0.95, 'name': 'البحرين', 'flag': 'bh', 'code': '+973', 'enabled': True},
+    'QA': {'sell': 0.85, 'buy': 1.05, 'name': 'قطر', 'flag': 'qa', 'code': '+974', 'enabled': True},
+    'OM': {'sell': 0.70, 'buy': 0.90, 'name': 'عمان', 'flag': 'om', 'code': '+968', 'enabled': True},
+    'JO': {'sell': 0.50, 'buy': 0.70, 'name': 'الأردن', 'flag': 'jo', 'code': '+962', 'enabled': True},
+    'LB': {'sell': 0.45, 'buy': 0.65, 'name': 'لبنان', 'flag': 'lb', 'code': '+961', 'enabled': True},
+    'IQ': {'sell': 0.40, 'buy': 0.60, 'name': 'العراق', 'flag': 'iq', 'code': '+964', 'enabled': True},
+    'YE': {'sell': 0.20, 'buy': 0.40, 'name': 'اليمن', 'flag': 'ye', 'code': '+967', 'enabled': True},
+    'LY': {'sell': 0.20, 'buy': 0.40, 'name': 'ليبيا', 'flag': 'ly', 'code': '+218', 'enabled': True},
+    'SD': {'sell': 0.20, 'buy': 0.40, 'name': 'السودان', 'flag': 'sd', 'code': '+249', 'enabled': True},
+    'IR': {'sell': 0.30, 'buy': 0.50, 'name': 'إيران', 'flag': 'ir', 'code': '+98', 'enabled': True},
+    'AF': {'sell': 0.10, 'buy': 0.30, 'name': 'أفغانستان', 'flag': 'af', 'code': '+93', 'enabled': True},
+    'AZ': {'sell': 0.50, 'buy': 0.70, 'name': 'أذربيجان', 'flag': 'az', 'code': '+994', 'enabled': True},
+    'GE': {'sell': 0.60, 'buy': 0.80, 'name': 'جورجيا', 'flag': 'ge', 'code': '+995', 'enabled': True},
+    'AM': {'sell': 0.40, 'buy': 0.60, 'name': 'أرمينيا', 'flag': 'am', 'code': '+374', 'enabled': True},
+    'KZ': {'sell': 0.50, 'buy': 0.70, 'name': 'كازاخستان', 'flag': 'kz', 'code': '+7', 'enabled': True},
+    'UZ': {'sell': 0.30, 'buy': 0.50, 'name': 'أوزبكستان', 'flag': 'uz', 'code': '+998', 'enabled': True},
+    'NP': {'sell': 0.15, 'buy': 0.35, 'name': 'نيبال', 'flag': 'np', 'code': '+977', 'enabled': True},
+    'LK': {'sell': 0.20, 'buy': 0.40, 'name': 'سريلانكا', 'flag': 'lk', 'code': '+94', 'enabled': True},
+    'MM': {'sell': 0.15, 'buy': 0.35, 'name': 'ميانمار', 'flag': 'mm', 'code': '+95', 'enabled': True},
+    'KH': {'sell': 0.25, 'buy': 0.45, 'name': 'كمبوديا', 'flag': 'kh', 'code': '+855', 'enabled': True},
+    'LA': {'sell': 0.20, 'buy': 0.40, 'name': 'لاوس', 'flag': 'la', 'code': '+856', 'enabled': True},
+    'MN': {'sell': 0.30, 'buy': 0.50, 'name': 'منغوليا', 'flag': 'mn', 'code': '+976', 'enabled': True},
+    'KG': {'sell': 0.25, 'buy': 0.45, 'name': 'قيرغيزستان', 'flag': 'kg', 'code': '+996', 'enabled': True},
+    'TJ': {'sell': 0.20, 'buy': 0.40, 'name': 'طاجيكستان', 'flag': 'tj', 'code': '+992', 'enabled': True},
+    'TM': {'sell': 0.20, 'buy': 0.40, 'name': 'تركمانستان', 'flag': 'tm', 'code': '+993', 'enabled': True},
+    'BY': {'sell': 0.50, 'buy': 0.70, 'name': 'بيلاروسيا', 'flag': 'by', 'code': '+375', 'enabled': True},
+    'MD': {'sell': 0.35, 'buy': 0.55, 'name': 'مولدوفا', 'flag': 'md', 'code': '+373', 'enabled': True},
+    'BG': {'sell': 0.70, 'buy': 0.90, 'name': 'بلغاريا', 'flag': 'bg', 'code': '+359', 'enabled': True},
+    'RS': {'sell': 0.50, 'buy': 0.70, 'name': 'صربيا', 'flag': 'rs', 'code': '+381', 'enabled': True},
+    'HR': {'sell': 0.80, 'buy': 1.00, 'name': 'كرواتيا', 'flag': 'hr', 'code': '+385', 'enabled': True},
+    'SI': {'sell': 0.75, 'buy': 0.95, 'name': 'سلوفينيا', 'flag': 'si', 'code': '+386', 'enabled': True},
+    'SK': {'sell': 0.70, 'buy': 0.90, 'name': 'سلوفاكيا', 'flag': 'sk', 'code': '+421', 'enabled': True},
+    'BA': {'sell': 0.40, 'buy': 0.60, 'name': 'البوسنة والهرسك', 'flag': 'ba', 'code': '+387', 'enabled': True},
+    'MK': {'sell': 0.35, 'buy': 0.55, 'name': 'مقدونيا الشمالية', 'flag': 'mk', 'code': '+389', 'enabled': True},
+    'AL': {'sell': 0.30, 'buy': 0.50, 'name': 'ألبانيا', 'flag': 'al', 'code': '+355', 'enabled': True},
+    'ME': {'sell': 0.35, 'buy': 0.55, 'name': 'الجبل الأسود', 'flag': 'me', 'code': '+382', 'enabled': True},
+    'XK': {'sell': 0.25, 'buy': 0.45, 'name': 'كوسوفو', 'flag': 'xk', 'code': '+383', 'enabled': True},
+    'IS': {'sell': 0.90, 'buy': 1.10, 'name': 'آيسلندا', 'flag': 'is', 'code': '+354', 'enabled': True},
+    'LU': {'sell': 1.20, 'buy': 1.40, 'name': 'لوكسمبورغ', 'flag': 'lu', 'code': '+352', 'enabled': True},
+    'MT': {'sell': 1.00, 'buy': 1.20, 'name': 'مالطا', 'flag': 'mt', 'code': '+356', 'enabled': True},
+    'CY': {'sell': 0.90, 'buy': 1.10, 'name': 'قبرص', 'flag': 'cy', 'code': '+357', 'enabled': True},
+    'EE': {'sell': 0.80, 'buy': 1.00, 'name': 'إستونيا', 'flag': 'ee', 'code': '+372', 'enabled': True},
+    'LV': {'sell': 0.75, 'buy': 0.95, 'name': 'لاتفيا', 'flag': 'lv', 'code': '+371', 'enabled': True},
+    'LT': {'sell': 0.70, 'buy': 0.90, 'name': 'ليتوانيا', 'flag': 'lt', 'code': '+370', 'enabled': True},
+    'UY': {'sell': 0.50, 'buy': 0.70, 'name': 'أوروغواي', 'flag': 'uy', 'code': '+598', 'enabled': True},
+    'PY': {'sell': 0.30, 'buy': 0.50, 'name': 'باراغواي', 'flag': 'py', 'code': '+595', 'enabled': True},
+    'BO': {'sell': 0.30, 'buy': 0.50, 'name': 'بوليفيا', 'flag': 'bo', 'code': '+591', 'enabled': True},
+    'EC': {'sell': 0.40, 'buy': 0.60, 'name': 'الإكوادور', 'flag': 'ec', 'code': '+593', 'enabled': True},
+    'CR': {'sell': 0.55, 'buy': 0.75, 'name': 'كوستاريكا', 'flag': 'cr', 'code': '+506', 'enabled': True},
+    'PA': {'sell': 0.60, 'buy': 0.80, 'name': 'بنما', 'flag': 'pa', 'code': '+507', 'enabled': True},
+    'DO': {'sell': 0.45, 'buy': 0.65, 'name': 'جمهورية الدومينيكان', 'flag': 'do', 'code': '+1', 'enabled': True},
+    'GT': {'sell': 0.35, 'buy': 0.55, 'name': 'غواتيمالا', 'flag': 'gt', 'code': '+502', 'enabled': True},
+    'SV': {'sell': 0.30, 'buy': 0.50, 'name': 'السلفادور', 'flag': 'sv', 'code': '+503', 'enabled': True},
+    'HN': {'sell': 0.25, 'buy': 0.45, 'name': 'هندوراس', 'flag': 'hn', 'code': '+504', 'enabled': True},
+    'NI': {'sell': 0.25, 'buy': 0.45, 'name': 'نيكاراغوا', 'flag': 'ni', 'code': '+505', 'enabled': True},
+    'CU': {'sell': 0.20, 'buy': 0.40, 'name': 'كوبا', 'flag': 'cu', 'code': '+53', 'enabled': True},
+    'JM': {'sell': 0.40, 'buy': 0.60, 'name': 'جامايكا', 'flag': 'jm', 'code': '+1', 'enabled': True},
+    'HT': {'sell': 0.15, 'buy': 0.35, 'name': 'هايتي', 'flag': 'ht', 'code': '+509', 'enabled': True},
+    'PR': {'sell': 0.70, 'buy': 0.90, 'name': 'بورتوريكو', 'flag': 'pr', 'code': '+1', 'enabled': True},
+    'TT': {'sell': 0.50, 'buy': 0.70, 'name': 'ترينيداد وتوباغو', 'flag': 'tt', 'code': '+1', 'enabled': True},
 }
 
 DEFAULT_SETTINGS = {
     'minDeposit': 1.5,
     'minWithdrawal': 3.0,
-    'referralBonus': 0.15, # تم التعديل إلى 0.15$     'fraudThreshold': 0.65,
+    'referralBonus': 0.15,
+    'fraudThreshold': 0.65,
     'maintenanceMode': False,
     'registrationEnabled': True,
     'buyEnabled': True,
     'sellEnabled': True,
     'siteName': 'TeleNum',
     'siteLogo': '',
-    'siteColor': '#0088cc'
+    'siteColor': '#0088cc',
+    'fakeMode': False, # الوضع الوهمي
+    'fakeStockCount': 4713 # عدد الأرقام الوهمية
 }
 
 # ============== Firebase ==============
@@ -169,13 +239,10 @@ def detect_country(phone):
     return matched
 
 def get_fingerprint(req):
-    # جمع معلومات فريدة للجهاز دون بيانات شخصية
     return {
         'ip': req.headers.get('X-Forwarded-For', req.headers.get('X-Real-IP', req.remote_addr)),
         'ua': req.headers.get('User-Agent', ''),
         'lang': req.headers.get('Accept-Language', ''),
-        'sec_ch_ua': req.headers.get('Sec-CH-UA', ''),
-        'sec_ch_ua_platform': req.headers.get('Sec-CH-UA-Platform', ''),
     }
 
 def check_fraud(user_id, fingerprint):
@@ -278,7 +345,7 @@ async def tg_verify(phone, code, password=None):
             except Exception as e:
                 return False, "كلمة سر 2FA خاطئة", None
         else:
-            return False, "2FA_REQUIRED", None # Signal that 2FA is needed
+            return False, "2FA_REQUIRED", None
     except PhoneCodeInvalidError:
         return False, "الكود غير صحيح", None
     except Exception as e:
@@ -365,9 +432,14 @@ def stats():
     numbers = fb_get('numbers') or {}
     users = fb_get('users') or {}
     countries = get_countries()
+    settings = get_settings()
     
     available = sum(1 for n in numbers.values() if n and n.get('status') == 'available')
     sold = sum(1 for n in numbers.values() if n and n.get('status') == 'sold')
+    
+    # Apply Fake Mode
+    if settings.get('fakeMode'):
+        available = settings.get('fakeStockCount', 4713)
     
     return jsonify({
         'availableNumbers': available,
@@ -380,11 +452,20 @@ def stats():
 def countries_api():
     numbers = fb_get('numbers') or {}
     countries = get_countries()
+    settings = get_settings()
     
     result = []
     for code, info in countries.items():
         if info and info.get('enabled', True):
             count = sum(1 for n in numbers.values() if n and n.get('status') == 'available' and n.get('country') == code)
+            
+            # Apply Fake Mode
+            if settings.get('fakeMode'):
+                # Randomize stock a bit based on country code to make it look real
+                import hashlib
+                hash_val = int(hashlib.md5(code.encode()).hexdigest(), 16) % 500
+                count = settings.get('fakeStockCount', 4713) - hash_val
+            
             result.append({
                 'code': code,
                 'name': info['name'],
@@ -419,6 +500,7 @@ def register():
     email = data.get('email', '').strip().lower()
     password = data.get('password', '')
     ref_code = data.get('referralCode', '').strip()
+    device_id = data.get('deviceId') # معرف الجهاز من الواجهة الأمامية
     
     if not all([username, email, password]):
         return jsonify({'success': False, 'error': 'جميع الحقول مطلوبة'})
@@ -448,13 +530,14 @@ def register():
         'referralEarnings': 0.0,
         'banned': False,
         'createdAt': datetime.now().isoformat(),
-        'fingerprint': fp # Save initial fingerprint
+        'fingerprint': fp,
+        'deviceId': device_id # تخزين معرف الجهاز
     }
     
     uid = fb_push('users', new_user)
     
     if uid:
-        fb_push('fingerprints', {'userId': uid, **fp, 'createdAt': datetime.now().isoformat()})
+        fb_push('fingerprints', {'userId': uid, **fp, 'deviceId': device_id, 'createdAt': datetime.now().isoformat()})
         
         if ref_code:
             for ref_uid, ref_user in users.items():
@@ -487,6 +570,7 @@ def login():
     data = request.json or {}
     email = data.get('email', '').strip().lower()
     password = data.get('password', '')
+    device_id = data.get('deviceId')
     
     users = fb_get('users') or {}
     for uid, u in users.items():
@@ -495,7 +579,11 @@ def login():
                 return jsonify({'success': False, 'error': f"حسابك محظور: {u.get('banReason', '')}"})
             
             token = generate_token()
-            fb_update(f'users/{uid}', {'token': token, 'lastLogin': datetime.now().isoformat()})
+            update_data = {'token': token, 'lastLogin': datetime.now().isoformat()}
+            if device_id:
+                update_data['deviceId'] = device_id
+            
+            fb_update(f'users/{uid}', update_data)
             
             return jsonify({
                 'success': True,
@@ -512,32 +600,35 @@ def login():
 
 @app.route('/api/auth/auto-login', methods=['POST'])
 def auto_login():
-    # تسجيل دخول تلقائي بناءً على البصمة
-    fp = get_fingerprint(request)
-    fps = fb_get('fingerprints') or {}
+    # تسجيل دخول تلقائي باستخدام معرف الجهاز المخزن محلياً
+    data = request.json or {}
+    device_id = data.get('deviceId')
     
-    # البحث عن بصمة مطابقة
-    for fp_id, fp_data in fps.items():
-        if fp_data and fp_data.get('ip') == fp.get('ip') and fp_data.get('ua') == fp.get('ua'):
-            user_id = fp_data.get('userId')
-            user = fb_get(f'users/{user_id}')
-            if user and not user.get('banned'):
-                # تسجيل دخول تلقائي
-                token = generate_token()
-                fb_update(f'users/{user_id}', {'token': token, 'lastLogin': datetime.now().isoformat()})
-                return jsonify({
-                    'success': True,
-                    'user': {
-                        'id': user_id,
-                        'username': user.get('username'),
-                        'email': user.get('email'),
-                        'balance': user.get('balance', 0),
-                        'token': token,
-                        'referralCode': user.get('referralCode'),
-                        'referralCount': user.get('referralCount', 0),
-                        'referralEarnings': user.get('referralEarnings', 0)
-                    }
-                })
+    if not device_id:
+        return jsonify({'success': False, 'error': 'No device ID'})
+
+    users = fb_get('users') or {}
+    for uid, u in users.items():
+        if u and u.get('deviceId') == device_id:
+            if u.get('banned'):
+                return jsonify({'success': False, 'error': 'محظور'})
+            
+            token = generate_token()
+            fb_update(f'users/{uid}', {'token': token, 'lastLogin': datetime.now().isoformat()})
+            
+            return jsonify({
+                'success': True,
+                'user': {
+                    'id': uid,
+                    'username': u.get('username'),
+                    'email': u.get('email'),
+                    'balance': u.get('balance', 0),
+                    'token': token,
+                    'referralCode': u.get('referralCode'),
+                    'referralCount': u.get('referralCount', 0),
+                    'referralEarnings': u.get('referralEarnings', 0)
+                }
+            })
     
     return jsonify({'success': False, 'error': 'لم يتم العثور على جلسة'})
 
@@ -676,7 +767,7 @@ def sell_verify():
     data = request.json or {}
     phone = data.get('phone', '').strip()
     code = data.get('code', '').strip()
-    password = data.get('password') # 2FA Password
+    password = data.get('password')
     
     if not phone or not code:
         return jsonify({'success': False, 'error': 'بيانات ناقصة'})
@@ -689,9 +780,8 @@ def sell_verify():
         success, msg, session = run_async(tg_verify(phone, code, password))
         
         if not success:
-            # إذا كان الخطأ أن 2FA مطلوب، نرجع رسالة خاصة
             if msg == "2FA_REQUIRED":
-                 return jsonify({'success': False, 'error': '2FA_REQUIRED', 'message': 'هذا الرقم محمي بكلمة مرور ثنائية. أدخلها للمتابعة.'})
+                 return jsonify({'success': False, 'error': '2FA_REQUIRED', 'message': 'هذا الرقم محمي بكلمة مرور ثنائية.'})
             return jsonify({'success': False, 'error': msg})
         
         countries = get_countries()
@@ -729,7 +819,7 @@ def deposit():
     
     valid, amount = verify_bsc_tx(txid)
     if not valid:
-        return jsonify({'success': False, 'error': 'المعاملة غير صالحة أو لم يتم التأكيد بعد. يرجى الانتظار دقيقة والمحاولة مجدداً.'})
+        return jsonify({'success': False, 'error': 'المعاملة غير صالحة'})
     
     fb_push('deposits', {'userId': request.user_id, 'txid': txid, 'amount': amount, 'status': 'approved', 'createdAt': datetime.now().isoformat()})
     
@@ -869,7 +959,6 @@ def admin_get_user(uid):
     if not user:
         return jsonify({'success': False, 'error': 'User not found'})
     
-    # Get user stats
     purchases = fb_get('purchases') or {}
     sells = fb_get('sell_requests') or {}
     deposits = fb_get('deposits') or {}
@@ -954,7 +1043,7 @@ def admin_verify_code():
         success, msg, session = run_async(tg_verify(phone, code, password))
         if not success:
              if msg == "2FA_REQUIRED":
-                 return jsonify({'success': False, 'error': '2FA_REQUIRED', 'message': 'هذا الرقم محمي بكلمة مرور ثنائية. أدخلها للمتابعة.'})
+                 return jsonify({'success': False, 'error': '2FA_REQUIRED', 'message': 'هذا الرقم محمي بكلمة مرور ثنائية.'})
              return jsonify({'success': False, 'error': msg})
         
         countries = get_countries()
@@ -979,7 +1068,6 @@ def admin_dashboard():
     wths = fb_get('withdrawals') or {}
     deposits = fb_get('deposits') or {}
     
-    # Calculations
     total_volume = sum(d.get('amount', 0) for d in deposits.values() if d and d.get('status') == 'approved')
     
     return jsonify({
