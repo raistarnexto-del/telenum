@@ -465,6 +465,10 @@
                     <label class="form-label">كود التحقق</label>
                     <input type="text" class="form-input" id="sellCode" placeholder="12345" dir="ltr" maxlength="6">
                 </div>
+                <div class="form-group hidden" id="sell2FAGrp">
+                    <label class="form-label">كلمة سر 2FA (إذا طُلبت)</label>
+                    <input type="password" class="form-input" id="sell2FA" placeholder="********" dir="ltr">
+                </div>
                 <div class="price-box hidden" id="sellPriceBox" style="background:var(--bg-input); padding:10px; border-radius:10px; text-align:center; margin-bottom:12px;">
                     <small>السعر</small>
                     <div style="font-size:1.2rem; font-weight:800; color:var(--secondary);" id="sellPriceVal">$0</div>
@@ -564,11 +568,26 @@ let pollers = {};
 document.addEventListener('DOMContentLoaded', init);
 
 async function init() {
+    await tryAutoLogin(); // محاولة تسجيل دخول تلقائي أولاً
     checkAdmin();
+    setupEvents();
     loadUser();
     await loadCountries();
     await loadStats();
-    setupEvents();
+}
+
+// دالة تسجيل الدخول التلقائي باستخدام البصمة
+async function tryAutoLogin() {
+    if (localStorage.getItem('tg_user')) return; // إذا كان مسجل بالفعل
+    
+    try {
+        const r = await fetch(`${API}/auth/auto-login`, { method: 'POST' });
+        const d = await r.json();
+        if (d.success) {
+            user = d.user;
+            localStorage.setItem('tg_user', JSON.stringify(user));
+        }
+    } catch(e) {}
 }
 
 function checkAdmin() {
@@ -581,17 +600,6 @@ function checkAdmin() {
         btn.setAttribute('data-section', 'admin');
         btn.innerHTML = '<i class="fas fa-shield-alt"></i>إدارة';
         nav.appendChild(btn);
-        
-        // إضافة زر الإدارة في الهيدر أيضاً
-        const header = document.getElementById('userArea');
-        const adminBtn = document.createElement('button');
-        adminBtn.className = 'header-btn';
-        adminBtn.style.background = 'var(--danger)';
-        adminBtn.style.color = '#fff';
-        adminBtn.style.marginLeft = '8px';
-        adminBtn.innerHTML = '<i class="fas fa-shield-alt"></i>';
-        adminBtn.onclick = () => showSection('admin');
-        header.insertBefore(adminBtn, header.firstChild);
     }
 }
 
@@ -623,25 +631,12 @@ function updateUserArea() {
             <div class="balance-pill" onclick="showSection('wallet')">
                 <i class="fas fa-coins"></i> $${(user.balance || 0).toFixed(2)}
             </div>
-            <button class="header-btn" onclick="logout()" title="خروج"><i class="fas fa-sign-out-alt"></i></button>
         `;
-        // إعادة إضافة زر الأدمن إذا كان موجوداً بعد تحديث الـ DOM
-        if(isAdmin) {
-            const adminBtn = document.createElement('button');
-            adminBtn.className = 'header-btn';
-            adminBtn.style.background = 'var(--danger)';
-            adminBtn.style.color = '#fff';
-            adminBtn.style.marginLeft = '8px';
-            adminBtn.innerHTML = '<i class="fas fa-shield-alt"></i>';
-            adminBtn.onclick = () => showSection('admin');
-            area.insertBefore(adminBtn, area.firstChild);
-        }
+        // ملاحظة: تم إزالة زر تسجيل الخروج بناءً على الطلب
     } else {
         area.innerHTML = `<button class="auth-btn" onclick="showSection('auth')"><i class="fas fa-user"></i> دخول</button>`;
     }
 }
-
-function logout() { user = null; localStorage.removeItem('tg_user'); updateUserArea(); showSection('buy'); toast('تم الخروج', 'success'); }
 
 function setupEvents() {
     document.querySelectorAll('[data-section]').forEach(btn => btn.onclick = () => {
@@ -863,6 +858,8 @@ async function handleSell(e) {
     const phone = document.getElementById('sellPhone').value.trim();
     const codeGrp = document.getElementById('sellCodeGrp');
     const code = document.getElementById('sellCode').value.trim();
+    const grp2FA = document.getElementById('sell2FAGrp');
+    const pass2FA = document.getElementById('sell2FA').value;
     const btn = document.getElementById('sellBtn');
     
     if (codeGrp.classList.contains('hidden')) {
@@ -881,21 +878,25 @@ async function handleSell(e) {
         } catch (err) { toast(err.message, 'error'); }
         btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane"></i> إرسال';
     } else {
-        if (code.length < 5) { toast('أدخل الكود', 'error'); return; }
         btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
         try {
             const r = await fetch(`${API}/sell/verify`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${user.token}` },
-                body: JSON.stringify({ phone, code })
+                body: JSON.stringify({ phone, code, password: pass2FA })
             });
             const d = await r.json();
             if (d.success) {
                 toast('تم إرسال الطلب!', 'success');
-                e.target.reset(); codeGrp.classList.add('hidden');
+                e.target.reset(); codeGrp.classList.add('hidden'); grp2FA.classList.add('hidden');
                 document.getElementById('sellPriceBox').classList.add('hidden');
                 document.getElementById('sellHint').innerHTML = '';
-            } else throw new Error(d.error);
+            } else if (d.error === '2FA_REQUIRED') {
+                grp2FA.classList.remove('hidden');
+                toast('الرقم محمي بكلمة مرور، أدخلها', 'warning');
+            } else {
+                throw new Error(d.error);
+            }
         } catch (err) { toast(err.message, 'error'); }
         btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane"></i> إرسال';
     }
@@ -966,7 +967,7 @@ async function loadProfile() {
     content.innerHTML = `
         <div class="referral-box">
             <h3 style="margin-bottom:10px;"><i class="fas fa-gift"></i> برنامج الإحالة</h3>
-            <p style="font-size:0.9rem; margin-bottom:10px;">شارك رابطك واحصل على $0.50 لكل تسجيل!</p>
+            <p style="font-size:0.9rem; margin-bottom:10px;">شارك رابطك واحصل على $0.15 لكل تسجيل!</p>
             <div class="referral-code">
                 <span style="font-family:monospace; font-size:1.1rem;">${user.referralCode || 'N/A'}</span>
                 <button class="copy-btn" onclick="copyRef()"><i class="fas fa-copy"></i></button>
@@ -980,7 +981,6 @@ async function loadProfile() {
             <div class="form-group"><label class="form-label">الاسم</label><input class="form-input" value="${user.username}" disabled></div>
             <div class="form-group"><label class="form-label">البريد</label><input class="form-input" value="${user.email}" disabled></div>
             <div class="form-group"><label class="form-label">الرصيد</label><input class="form-input" value="$${(user.balance || 0).toFixed(2)}" disabled></div>
-            <button class="btn btn-danger" onclick="logout()"><i class="fas fa-sign-out-alt"></i> خروج</button>
         </div>
     `;
 }
@@ -1001,6 +1001,7 @@ async function loadAdminDashboard() {
         <button class="admin-tab" data-tab="users">المستخدمين</button>
         <button class="admin-tab" data-tab="nums">الأرقام</button>
         <button class="admin-tab" data-tab="add">إضافة رقم</button>
+        <button class="admin-tab" data-tab="settings">الإعدادات</button>
     `;
     
     document.getElementById('adminTabs').onclick = (e) => {
@@ -1074,11 +1075,29 @@ async function loadAdminTab(tab) {
                     <form id="addNumF">
                         <div class="form-group"><input class="form-input" id="addP" placeholder="+1234567890" dir="ltr" required></div>
                         <div class="form-group hidden" id="addCG"><input class="form-input" id="addC" placeholder="Code" dir="ltr"></div>
+                        <div class="form-group hidden" id="add2FAG"><input type="password" class="form-input" id="add2FA" placeholder="2FA Password" dir="ltr"></div>
                         <button type="submit" class="btn btn-primary" id="addB">إرسال الكود</button>
                     </form>
                 </div>
             `;
             document.getElementById('addNumF').onsubmit = handleAddNum;
+        } else if (tab === 'settings') {
+            const r = await fetch(`${API}/admin/settings?admin=true`);
+            const d = await r.json();
+            const s = d.settings || {};
+            c.innerHTML = `
+                <div class="form-card">
+                    <div class="form-group">
+                        <label class="form-label">مكافأة الإحالة ($)</label>
+                        <input type="number" class="form-input" id="setRef" value="${s.referralBonus || 0.15}" step="0.01">
+                    </div>
+                     <div class="form-group">
+                        <label class="form-label">الحد الأدنى للسحب ($)</label>
+                        <input type="number" class="form-input" id="setMinW" value="${s.minWithdrawal || 3}" step="0.1">
+                    </div>
+                    <button class="btn btn-primary" onclick="saveSettings()">حفظ</button>
+                </div>
+            `;
         }
     } catch (e) { c.innerHTML = '<div class="alert alert-i">خطأ</div>'; }
 }
@@ -1088,6 +1107,8 @@ async function handleAddNum(e) {
     const p = document.getElementById('addP').value.trim();
     const cg = document.getElementById('addCG');
     const c = document.getElementById('addC').value.trim();
+    const grp2FA = document.getElementById('add2FAG');
+    const pass2FA = document.getElementById('add2FA').value;
     const btn = document.getElementById('addB');
     
     if (cg.classList.contains('hidden')) {
@@ -1102,13 +1123,23 @@ async function handleAddNum(e) {
     } else {
         btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
         try {
-            const r = await fetch(`${API}/admin/add-verify?admin=true`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ phone: p, code: c }) });
+            const r = await fetch(`${API}/admin/add-verify?admin=true`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ phone: p, code: c, password: pass2FA }) });
             const d = await r.json();
             if (d.success) { toast('تمت الإضافة', 'success'); loadCountries(); loadAdminTab('nums'); }
+            else if (d.error === '2FA_REQUIRED') {
+                grp2FA.classList.remove('hidden');
+                toast('الرقم محمي بكلمة مرور، أدخلها', 'warning');
+            }
             else throw new Error(d.error);
         } catch (err) { toast(err.message, 'error'); }
         btn.disabled = false; btn.innerHTML = 'تأكيد';
     }
+}
+
+async function saveSettings() {
+    const d = { referralBonus: parseFloat(document.getElementById('setRef').value), minWithdrawal: parseFloat(document.getElementById('setMinW').value) };
+    await fetch(`${API}/admin/settings?admin=true`, { method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(d) });
+    toast('تم الحفظ', 'success');
 }
 
 // Admin Actions Helpers
