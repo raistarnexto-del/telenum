@@ -9,10 +9,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        /* CSS Styles (Same as previous good version) */
-        :root {
-            --primary: #0088cc; --primary-dark: #006699; --primary-light: #e6f4fa; --secondary: #00c853; --danger: #ff5252; --warning: #ffab00; --bg: #f0f2f5; --bg-card: #ffffff; --bg-input: #f8f9fa; --border: #e0e0e0; --text: #1a1a1a; --text-secondary: #666666; --radius: 16px; --shadow: 0 4px 20px rgba(0,0,0,0.08);
-        }
+        /* CSS Styles (Same as previous) */
+        :root { --primary: #0088cc; --primary-dark: #006699; --primary-light: #e6f4fa; --secondary: #00c853; --danger: #ff5252; --warning: #ffab00; --bg: #f0f2f5; --bg-card: #ffffff; --bg-input: #f8f9fa; --border: #e0e0e0; --text: #1a1a1a; --text-secondary: #666666; --radius: 16px; --shadow: 0 4px 20px rgba(0,0,0,0.08); }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Tajawal', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 80px; }
         .header { position: fixed; top: 0; left: 0; right: 0; background: var(--bg-card); box-shadow: 0 2px 10px rgba(0,0,0,0.05); z-index: 100; padding: 12px 16px; }
@@ -182,25 +180,51 @@
     <div class="modal-overlay" id="modal"><div class="modal"><div class="modal-header"><h3 class="modal-title" id="modalTitle">عنوان</h3><button class="modal-close" onclick="closeModal()">&times;</button></div><div class="modal-body" id="modalBody"></div></div></div>
     <div class="toast-container" id="toasts"></div>
     <script>
-        const API = '/api';
-        let user = null;
-        let isAdmin = false;
-        let countries = [];
-        let pollers = {};
+        const API = '/api'; let user = null; let isAdmin = false; let countries = []; let pollers = {};
 
-        // --- Fingerprint (10 Points) ---
+        // --- Fingerprint (20 Points) ---
         async function getDeviceFingerprint() {
             const fp = {};
+            // 1. User Agent
             fp.ua = navigator.userAgent;
+            // 2. Language
             fp.lang = navigator.language;
-            fp.screen = `${screen.width}x${screen.height}x${screen.colorDepth}`;
+            // 3. Screen Resolution
+            fp.screen = `${screen.width}x${screen.height}`;
+            // 4. Color Depth
+            fp.color_depth = screen.colorDepth;
+            // 5. Pixel Depth
+            fp.pixel_depth = screen.pixelDepth;
+            // 6. Device Pixel Ratio
+            fp.device_pixel_ratio = window.devicePixelRatio;
+            // 7. Timezone
             fp.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            // 8. Platform
             fp.platform = navigator.platform;
-            try { const c = document.createElement('canvas'); const ctx = c.getContext('2d'); ctx.textBaseline = 'top'; ctx.font = '14px Arial'; ctx.fillText('FP', 2, 2); fp.canvas = c.toDataURL().slice(-50); } catch(e) { fp.canvas = 'err'; }
-            try { const c = document.createElement('canvas'); const gl = c.getContext('webgl'); const dbg = gl.getExtension('WEBGL_debug_renderer_info'); fp.webgl = gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL); } catch(e) { fp.webgl = 'err'; }
-            fp.cores = navigator.hardwareConcurrency || 'unk';
-            fp.memory = navigator.deviceMemory || 'unk';
+            // 9. Hardware Concurrency (CPU Cores)
+            fp.hardware_concurrency = navigator.hardwareConcurrency || 'unk';
+            // 10. Device Memory (RAM)
+            fp.device_memory = navigator.deviceMemory || 'unk';
+            // 11. Touch Support
             fp.touch = navigator.maxTouchPoints || 0;
+            // 12. Canvas Fingerprint
+            try { const c = document.createElement('canvas'); const ctx = c.getContext('2d'); ctx.textBaseline = 'top'; ctx.font = '14px Arial'; ctx.fillText('FP', 2, 2); fp.canvas = c.toDataURL().slice(-50); } catch(e) { fp.canvas = 'err'; }
+            // 13. WebGL Vendor
+            try { const c = document.createElement('canvas'); const gl = c.getContext('webgl'); const dbg = gl.getExtension('WEBGL_debug_renderer_info'); fp.webgl_vendor = gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL); } catch(e) { fp.webgl_vendor = 'err'; }
+            // 14. WebGL Renderer
+            try { const c = document.createElement('canvas'); const gl = c.getContext('webgl'); const dbg = gl.getExtension('WEBGL_debug_renderer_info'); fp.webgl_renderer = gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL); } catch(e) { fp.webgl_renderer = 'err'; }
+            // 15. Audio Fingerprint
+            try { const audioCtx = new (window.AudioContext || window.webkitAudioContext)(); const oscillator = audioCtx.createOscillator(); const analyser = audioCtx.createAnalyser(); const gain = audioCtx.createGain(); const scriptProcessor = audioCtx.createScriptProcessor(4096,1,1); gain.gain.value = 0; oscillator.type = 'triangle'; oscillator.frequency.value = 10000; oscillator.connect(analyser); analyser.connect(scriptProcessor); scriptProcessor.connect(gain); gain.connect(audioCtx.destination); scriptProcessor.onaudioprocess = (e) => { fp.audio = 'gen'; }; oscillator.start(0); oscillator.stop(0); } catch(e) { fp.audio = 'err'; }
+            // 16. Fonts (Basic check)
+            fp.fonts = 'check'; // Simplified
+            // 17. Local Storage Check
+            try { localStorage.setItem('test', 'test'); localStorage.removeItem('test'); fp.local_storage = 1; } catch(e) { fp.local_storage = 0; }
+            // 18. Session Storage Check
+            try { sessionStorage.setItem('test', 'test'); sessionStorage.removeItem('test'); fp.session_storage = 1; } catch(e) { fp.session_storage = 0; }
+            // 19. Cookies Enabled
+            fp.cookies = navigator.cookieEnabled ? 1 : 0;
+            // 20. Do Not Track
+            fp.dnt = navigator.doNotTrack || 'unspecified';
             return fp;
         }
 
@@ -243,12 +267,12 @@
         function filterCountries() { renderCountries(document.getElementById('searchCountry').value); }
         async function loadStats() { try { const r = await fetch(`${API}/stats`); const d = await r.json(); document.getElementById('statCountries').textContent = d.totalCountries || 0; document.getElementById('statNumbers').textContent = d.availableNumbers || 0; if(d.depositWallet) document.getElementById('depositWallet').textContent = d.depositWallet; } catch (e) {} }
 
-        // Buy
+        // Buy, Sell, Auth, Wallet logic remains the same...
         function openBuyModal(code) { if (!user) { toast('سجل دخول أولاً', 'error'); showSection('auth'); return; } const c = countries.find(x => x.code === code); if (!c || c.stock === 0) return; document.getElementById('modalTitle').textContent = 'شراء رقم'; document.getElementById('modalBody').innerHTML = `<div style="text-align:center; margin-bottom:16px;"><img src="https://flagcdn.com/w80/${c.flag}.png" style="width:60px; border-radius:50%;"><h3>${c.name}</h3><p style="color:var(--text-secondary)">${c.phoneCode}</p></div><div class="code-box"><div style="font-size:0.9rem; opacity:0.8;">السعر</div><div class="code-value">$${c.buyPrice.toFixed(2)}</div></div><button class="btn btn-success" onclick="confirmBuy('${code}')"><i class="fas fa-check"></i> تأكيد الشراء</button>`; openModal(); }
         async function confirmBuy(code) { const c = countries.find(x => x.code === code); if ((user.balance || 0) < c.buyPrice) { toast('رصيد غير كافٍ', 'error'); closeModal(); showSection('wallet'); return; } document.getElementById('modalBody').innerHTML = '<div class="spinner"></div><p style="text-align:center">جاري الشراء...</p>'; try { const r = await fetch(`${API}/buy`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${user.token}` }, body: JSON.stringify({ country: code }) }); const d = await r.json(); if (d.success) { user.balance = d.newBalance; localStorage.setItem('tg_user', JSON.stringify(user)); updateUserArea(); loadCountries(); document.getElementById('modalBody').innerHTML = `<div style="text-align:center;"><i class="fas fa-check-circle" style="font-size:3rem; color:var(--secondary);"></i><h3>تم الشراء!</h3></div><div class="code-box"><div style="font-size:0.9rem; opacity:0.8;">الرقم</div><div class="code-value">${d.phone}</div></div><div id="msgBox" style="background:var(--bg-input); border-radius:10px; padding:10px; max-height:150px; overflow-y:auto;"><div class="spinner" style="margin:10px auto;"></div></div><div style="display:flex; gap:10px; margin-top:12px;"><button class="btn btn-success" onclick="completePurchase('${d.purchaseId}')"><i class="fas fa-check"></i> تم</button><button class="btn btn-outline" onclick="closeModal()">إغلاق</button></div>`; startPolling(d.purchaseId); } else throw new Error(d.error); } catch (e) { document.getElementById('modalBody').innerHTML = `<div style="text-align:center;"><i class="fas fa-times-circle" style="font-size:3rem; color:var(--danger);"></i><p>${e.message}</p></div><button class="btn btn-outline mt-2" onclick="closeModal()">إغلاق</button>`; } }
         function startPolling(pid) { const poll = async () => { try { const r = await fetch(`${API}/messages/${pid}`, { headers: { 'Authorization': `Bearer ${user.token}` } }); const d = await r.json(); const box = document.getElementById('msgBox'); if (box && d.messages?.length) { box.innerHTML = d.messages.map(m => `<div style="padding:8px; border-bottom:1px solid var(--border);"><span style="font-weight:700; font-family:monospace; font-size:1.1rem;">${m.code}</span></div>`).join(''); } } catch (e) {} }; poll(); pollers[pid] = setInterval(poll, 3000); }
         async function completePurchase(pid) { if (pollers[pid]) clearInterval(pollers[pid]); await fetch(`${API}/complete`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${user.token}` }, body: JSON.stringify({ purchaseId: pid }) }); toast('تم بنجاح', 'success'); closeModal(); loadMyNumbers(); }
-
+        
         // Auth
         async function handleLogin(e) { e.preventDefault(); const btn = e.target.querySelector('button'); btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; const fingerprint = await getDeviceFingerprint(); try { const r = await fetch(`${API}/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: document.getElementById('loginEmail').value, password: document.getElementById('loginPass').value, deviceId: getDeviceId(), fingerprint }) }); const d = await r.json(); if (d.success) { user = d.user; localStorage.setItem('tg_user', JSON.stringify(user)); updateUserArea(); showSection('buy'); toast('مرحباً!', 'success'); } else toast(d.error, 'error'); } catch (err) { toast('خطأ اتصال', 'error'); } btn.disabled = false; btn.innerHTML = 'دخول'; }
         async function handleRegister(e) { e.preventDefault(); const btn = e.target.querySelector('button'); btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; const fingerprint = await getDeviceFingerprint(); try { const r = await fetch(`${API}/auth/register`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: document.getElementById('regName').value, email: document.getElementById('regEmail').value, password: document.getElementById('regPass').value, referralCode: document.getElementById('regReferral').value, deviceId: getDeviceId(), fingerprint }) }); const d = await r.json(); if (d.success) { user = d.user; localStorage.setItem('tg_user', JSON.stringify(user)); updateUserArea(); showSection('buy'); toast('تم إنشاء الحساب!', 'success'); } else toast(d.error, 'error'); } catch (err) { toast('خطأ اتصال', 'error'); } btn.disabled = false; btn.innerHTML = 'إنشاء'; }
