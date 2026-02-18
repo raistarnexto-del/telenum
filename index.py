@@ -17,7 +17,8 @@ CORS(app)
 # ============== Configuration ==============
 TELEGRAM_API_ID = 27241932
 TELEGRAM_API_HASH = "218edeae0f4cf9053d7dcbf3b1485048"
-WALLET_ADDRESS = "0x8E00A980274Cfb22798290586d97F7D185E3092D"
+# محفظة الإيداع فقط (للاستلام)
+DEPOSIT_WALLET = "0x8E00A980274Cfb22798290586d97F7D185E3092D"
 BSCSCAN_API_KEY = "8BHURRRGKXD35BPGQZ8E94CVEVAUNMD9UF"
 USDT_CONTRACT_BSC = "0x55d398326f99059fF775485246999027B3197955"
 
@@ -26,134 +27,138 @@ FIREBASE_URL = "https://lolaminig-afea4-default-rtdb.firebaseio.com"
 executor = ThreadPoolExecutor(max_workers=4)
 phone_sessions = {}
 
-# ============== Default Data (120+ Countries) ==============
+# ============== Default Data (Pricing & 120+ Countries) ==============
 DEFAULT_COUNTRIES = {
-    # --- Top Countries ---
-    'US': {'sell': 0.75, 'buy': 0.95, 'name': 'الولايات المتحدة', 'flag': 'us', 'code': '+1', 'enabled': True},
-    'UK': {'sell': 0.80, 'buy': 1.00, 'name': 'المملكة المتحدة', 'flag': 'gb', 'code': '+44', 'enabled': True},
-    'CA': {'sell': 0.25, 'buy': 0.45, 'name': 'كندا', 'flag': 'ca', 'code': '+1', 'enabled': True},
-    'DE': {'sell': 1.50, 'buy': 1.70, 'name': 'ألمانيا', 'flag': 'de', 'code': '+49', 'enabled': True},
-    'FR': {'sell': 1.20, 'buy': 1.40, 'name': 'فرنسا', 'flag': 'fr', 'code': '+33', 'enabled': True},
-    'NL': {'sell': 1.00, 'buy': 1.20, 'name': 'هولندا', 'flag': 'nl', 'code': '+31', 'enabled': True},
-    'PL': {'sell': 0.90, 'buy': 1.10, 'name': 'بولندا', 'flag': 'pl', 'code': '+48', 'enabled': True},
-    'AU': {'sell': 1.00, 'buy': 1.20, 'name': 'أستراليا', 'flag': 'au', 'code': '+61', 'enabled': True},
-    'SA': {'sell': 0.80, 'buy': 1.00, 'name': 'السعودية', 'flag': 'sa', 'code': '+966', 'enabled': True},
-    'AE': {'sell': 0.90, 'buy': 1.10, 'name': 'الإمارات', 'flag': 'ae', 'code': '+971', 'enabled': True},
-    'EG': {'sell': 0.40, 'buy': 0.60, 'name': 'مصر', 'flag': 'eg', 'code': '+20', 'enabled': True},
-    'TR': {'sell': 0.55, 'buy': 0.75, 'name': 'تركيا', 'flag': 'tr', 'code': '+90', 'enabled': True},
-    'SY': {'sell': 0.30, 'buy': 0.50, 'name': 'سوريا', 'flag': 'sy', 'code': '+963', 'enabled': True},
-    'IN': {'sell': 0.30, 'buy': 0.50, 'name': 'الهند', 'flag': 'in', 'code': '+91', 'enabled': True},
-    'BR': {'sell': 0.50, 'buy': 0.70, 'name': 'البرازيل', 'flag': 'br', 'code': '+55', 'enabled': True},
-    'RU': {'sell': 0.60, 'buy': 0.80, 'name': 'روسيا', 'flag': 'ru', 'code': '+7', 'enabled': True},
-    'ES': {'sell': 0.90, 'buy': 1.10, 'name': 'إسبانيا', 'flag': 'es', 'code': '+34', 'enabled': True},
-    'IT': {'sell': 0.85, 'buy': 1.05, 'name': 'إيطاليا', 'flag': 'it', 'code': '+39', 'enabled': True},
-    'JP': {'sell': 1.30, 'buy': 1.50, 'name': 'اليابان', 'flag': 'jp', 'code': '+81', 'enabled': True},
-    'KR': {'sell': 1.20, 'buy': 1.40, 'name': 'كوريا الجنوبية', 'flag': 'kr', 'code': '+82', 'enabled': True},
-    'ID': {'sell': 0.35, 'buy': 0.55, 'name': 'إندونيسيا', 'flag': 'id', 'code': '+62', 'enabled': True},
-    'MX': {'sell': 0.45, 'buy': 0.65, 'name': 'المكسيك', 'flag': 'mx', 'code': '+52', 'enabled': True},
-    'AR': {'sell': 0.40, 'buy': 0.60, 'name': 'الأرجنتين', 'flag': 'ar', 'code': '+54', 'enabled': True},
-    'CO': {'sell': 0.35, 'buy': 0.55, 'name': 'كولومبيا', 'flag': 'co', 'code': '+57', 'enabled': True},
-    'CL': {'sell': 0.50, 'buy': 0.70, 'name': 'تشيلي', 'flag': 'cl', 'code': '+56', 'enabled': True},
-    'PE': {'sell': 0.30, 'buy': 0.50, 'name': 'بيرو', 'flag': 'pe', 'code': '+51', 'enabled': True},
-    'VE': {'sell': 0.25, 'buy': 0.45, 'name': 'فنزويلا', 'flag': 've', 'code': '+58', 'enabled': True},
-    'NG': {'sell': 0.20, 'buy': 0.40, 'name': 'نيجيريا', 'flag': 'ng', 'code': '+234', 'enabled': True},
-    'ZA': {'sell': 0.60, 'buy': 0.80, 'name': 'جنوب أفريقيا', 'flag': 'za', 'code': '+27', 'enabled': True},
-    'KE': {'sell': 0.15, 'buy': 0.35, 'name': 'كينيا', 'flag': 'ke', 'code': '+254', 'enabled': True},
-    'MA': {'sell': 0.25, 'buy': 0.45, 'name': 'المغرب', 'flag': 'ma', 'code': '+212', 'enabled': True},
-    'DZ': {'sell': 0.20, 'buy': 0.40, 'name': 'الجزائر', 'flag': 'dz', 'code': '+213', 'enabled': True},
-    'TN': {'sell': 0.25, 'buy': 0.45, 'name': 'تونس', 'flag': 'tn', 'code': '+216', 'enabled': True},
-    'IL': {'sell': 1.50, 'buy': 1.80, 'name': 'إسرائيل', 'flag': 'il', 'code': '+972', 'enabled': True},
-    'GR': {'sell': 0.80, 'buy': 1.00, 'name': 'اليونان', 'flag': 'gr', 'code': '+30', 'enabled': True},
-    'PT': {'sell': 0.85, 'buy': 1.05, 'name': 'البرتغال', 'flag': 'pt', 'code': '+351', 'enabled': True},
-    'BE': {'sell': 0.95, 'buy': 1.15, 'name': 'بلجيكا', 'flag': 'be', 'code': '+32', 'enabled': True},
-    'AT': {'sell': 1.00, 'buy': 1.20, 'name': 'النمسا', 'flag': 'at', 'code': '+43', 'enabled': True},
-    'CH': {'sell': 1.50, 'buy': 1.80, 'name': 'سويسرا', 'flag': 'ch', 'code': '+41', 'enabled': True},
-    'SE': {'sell': 1.10, 'buy': 1.30, 'name': 'السويد', 'flag': 'se', 'code': '+46', 'enabled': True},
-    'NO': {'sell': 1.20, 'buy': 1.40, 'name': 'النرويج', 'flag': 'no', 'code': '+47', 'enabled': True},
-    'DK': {'sell': 1.00, 'buy': 1.20, 'name': 'الدنمارك', 'flag': 'dk', 'code': '+45', 'enabled': True},
-    'FI': {'sell': 1.10, 'buy': 1.30, 'name': 'فنلندا', 'flag': 'fi', 'code': '+358', 'enabled': True},
-    'IE': {'sell': 0.90, 'buy': 1.10, 'name': 'أيرلندا', 'flag': 'ie', 'code': '+353', 'enabled': True},
-    'NZ': {'sell': 0.85, 'buy': 1.05, 'name': 'نيوزيلندا', 'flag': 'nz', 'code': '+64', 'enabled': True},
-    'SG': {'sell': 1.20, 'buy': 1.40, 'name': 'سنغافورة', 'flag': 'sg', 'code': '+65', 'enabled': True},
-    'MY': {'sell': 0.45, 'buy': 0.65, 'name': 'ماليزيا', 'flag': 'my', 'code': '+60', 'enabled': True},
-    'TH': {'sell': 0.50, 'buy': 0.70, 'name': 'تايلاند', 'flag': 'th', 'code': '+66', 'enabled': True},
-    'VN': {'sell': 0.40, 'buy': 0.60, 'name': 'فيتنام', 'flag': 'vn', 'code': '+84', 'enabled': True},
-    'PH': {'sell': 0.35, 'buy': 0.55, 'name': 'الفلبين', 'flag': 'ph', 'code': '+63', 'enabled': True},
-    'PK': {'sell': 0.20, 'buy': 0.40, 'name': 'باكستان', 'flag': 'pk', 'code': '+92', 'enabled': True},
-    'BD': {'sell': 0.15, 'buy': 0.35, 'name': 'بنغلاديش', 'flag': 'bd', 'code': '+880', 'enabled': True},
-    'UA': {'sell': 0.70, 'buy': 0.90, 'name': 'أوكرانيا', 'flag': 'ua', 'code': '+380', 'enabled': True},
-    'CZ': {'sell': 0.80, 'buy': 1.00, 'name': 'التشيك', 'flag': 'cz', 'code': '+420', 'enabled': True},
-    'RO': {'sell': 0.60, 'buy': 0.80, 'name': 'رومانيا', 'flag': 'ro', 'code': '+40', 'enabled': True},
-    'HU': {'sell': 0.70, 'buy': 0.90, 'name': 'المجر', 'flag': 'hu', 'code': '+36', 'enabled': True},
-    # --- Rest of the world ---
-    'CN': {'sell': 0.50, 'buy': 0.70, 'name': 'الصين', 'flag': 'cn', 'code': '+86', 'enabled': True},
-    'HK': {'sell': 1.10, 'buy': 1.30, 'name': 'هونغ كونغ', 'flag': 'hk', 'code': '+852', 'enabled': True},
-    'TW': {'sell': 0.90, 'buy': 1.10, 'name': 'تايوان', 'flag': 'tw', 'code': '+886', 'enabled': True},
-    'KW': {'sell': 0.80, 'buy': 1.00, 'name': 'الكويت', 'flag': 'kw', 'code': '+965', 'enabled': True},
-    'BH': {'sell': 0.75, 'buy': 0.95, 'name': 'البحرين', 'flag': 'bh', 'code': '+973', 'enabled': True},
-    'QA': {'sell': 0.85, 'buy': 1.05, 'name': 'قطر', 'flag': 'qa', 'code': '+974', 'enabled': True},
-    'OM': {'sell': 0.70, 'buy': 0.90, 'name': 'عمان', 'flag': 'om', 'code': '+968', 'enabled': True},
-    'JO': {'sell': 0.50, 'buy': 0.70, 'name': 'الأردن', 'flag': 'jo', 'code': '+962', 'enabled': True},
-    'LB': {'sell': 0.45, 'buy': 0.65, 'name': 'لبنان', 'flag': 'lb', 'code': '+961', 'enabled': True},
-    'IQ': {'sell': 0.40, 'buy': 0.60, 'name': 'العراق', 'flag': 'iq', 'code': '+964', 'enabled': True},
-    'YE': {'sell': 0.20, 'buy': 0.40, 'name': 'اليمن', 'flag': 'ye', 'code': '+967', 'enabled': True},
-    'LY': {'sell': 0.20, 'buy': 0.40, 'name': 'ليبيا', 'flag': 'ly', 'code': '+218', 'enabled': True},
-    'SD': {'sell': 0.20, 'buy': 0.40, 'name': 'السودان', 'flag': 'sd', 'code': '+249', 'enabled': True},
-    'IR': {'sell': 0.30, 'buy': 0.50, 'name': 'إيران', 'flag': 'ir', 'code': '+98', 'enabled': True},
-    'AF': {'sell': 0.10, 'buy': 0.30, 'name': 'أفغانستان', 'flag': 'af', 'code': '+93', 'enabled': True},
-    'AZ': {'sell': 0.50, 'buy': 0.70, 'name': 'أذربيجان', 'flag': 'az', 'code': '+994', 'enabled': True},
-    'GE': {'sell': 0.60, 'buy': 0.80, 'name': 'جورجيا', 'flag': 'ge', 'code': '+995', 'enabled': True},
-    'AM': {'sell': 0.40, 'buy': 0.60, 'name': 'أرمينيا', 'flag': 'am', 'code': '+374', 'enabled': True},
-    'KZ': {'sell': 0.50, 'buy': 0.70, 'name': 'كازاخستان', 'flag': 'kz', 'code': '+7', 'enabled': True},
-    'UZ': {'sell': 0.30, 'buy': 0.50, 'name': 'أوزبكستان', 'flag': 'uz', 'code': '+998', 'enabled': True},
-    'NP': {'sell': 0.15, 'buy': 0.35, 'name': 'نيبال', 'flag': 'np', 'code': '+977', 'enabled': True},
-    'LK': {'sell': 0.20, 'buy': 0.40, 'name': 'سريلانكا', 'flag': 'lk', 'code': '+94', 'enabled': True},
-    'MM': {'sell': 0.15, 'buy': 0.35, 'name': 'ميانمار', 'flag': 'mm', 'code': '+95', 'enabled': True},
-    'KH': {'sell': 0.25, 'buy': 0.45, 'name': 'كمبوديا', 'flag': 'kh', 'code': '+855', 'enabled': True},
-    'LA': {'sell': 0.20, 'buy': 0.40, 'name': 'لاوس', 'flag': 'la', 'code': '+856', 'enabled': True},
-    'MN': {'sell': 0.30, 'buy': 0.50, 'name': 'منغوليا', 'flag': 'mn', 'code': '+976', 'enabled': True},
-    'KG': {'sell': 0.25, 'buy': 0.45, 'name': 'قيرغيزستان', 'flag': 'kg', 'code': '+996', 'enabled': True},
-    'TJ': {'sell': 0.20, 'buy': 0.40, 'name': 'طاجيكستان', 'flag': 'tj', 'code': '+992', 'enabled': True},
-    'TM': {'sell': 0.20, 'buy': 0.40, 'name': 'تركمانستان', 'flag': 'tm', 'code': '+993', 'enabled': True},
-    'BY': {'sell': 0.50, 'buy': 0.70, 'name': 'بيلاروسيا', 'flag': 'by', 'code': '+375', 'enabled': True},
-    'MD': {'sell': 0.35, 'buy': 0.55, 'name': 'مولدوفا', 'flag': 'md', 'code': '+373', 'enabled': True},
-    'BG': {'sell': 0.70, 'buy': 0.90, 'name': 'بلغاريا', 'flag': 'bg', 'code': '+359', 'enabled': True},
-    'RS': {'sell': 0.50, 'buy': 0.70, 'name': 'صربيا', 'flag': 'rs', 'code': '+381', 'enabled': True},
-    'HR': {'sell': 0.80, 'buy': 1.00, 'name': 'كرواتيا', 'flag': 'hr', 'code': '+385', 'enabled': True},
-    'SI': {'sell': 0.75, 'buy': 0.95, 'name': 'سلوفينيا', 'flag': 'si', 'code': '+386', 'enabled': True},
-    'SK': {'sell': 0.70, 'buy': 0.90, 'name': 'سلوفاكيا', 'flag': 'sk', 'code': '+421', 'enabled': True},
-    'BA': {'sell': 0.40, 'buy': 0.60, 'name': 'البوسنة والهرسك', 'flag': 'ba', 'code': '+387', 'enabled': True},
-    'MK': {'sell': 0.35, 'buy': 0.55, 'name': 'مقدونيا الشمالية', 'flag': 'mk', 'code': '+389', 'enabled': True},
-    'AL': {'sell': 0.30, 'buy': 0.50, 'name': 'ألبانيا', 'flag': 'al', 'code': '+355', 'enabled': True},
-    'ME': {'sell': 0.35, 'buy': 0.55, 'name': 'الجبل الأسود', 'flag': 'me', 'code': '+382', 'enabled': True},
-    'XK': {'sell': 0.25, 'buy': 0.45, 'name': 'كوسوفو', 'flag': 'xk', 'code': '+383', 'enabled': True},
-    'IS': {'sell': 0.90, 'buy': 1.10, 'name': 'آيسلندا', 'flag': 'is', 'code': '+354', 'enabled': True},
-    'LU': {'sell': 1.20, 'buy': 1.40, 'name': 'لوكسمبورغ', 'flag': 'lu', 'code': '+352', 'enabled': True},
-    'MT': {'sell': 1.00, 'buy': 1.20, 'name': 'مالطا', 'flag': 'mt', 'code': '+356', 'enabled': True},
-    'CY': {'sell': 0.90, 'buy': 1.10, 'name': 'قبرص', 'flag': 'cy', 'code': '+357', 'enabled': True},
-    'EE': {'sell': 0.80, 'buy': 1.00, 'name': 'إستونيا', 'flag': 'ee', 'code': '+372', 'enabled': True},
-    'LV': {'sell': 0.75, 'buy': 0.95, 'name': 'لاتفيا', 'flag': 'lv', 'code': '+371', 'enabled': True},
-    'LT': {'sell': 0.70, 'buy': 0.90, 'name': 'ليتوانيا', 'flag': 'lt', 'code': '+370', 'enabled': True},
-    'UY': {'sell': 0.50, 'buy': 0.70, 'name': 'أوروغواي', 'flag': 'uy', 'code': '+598', 'enabled': True},
-    'PY': {'sell': 0.30, 'buy': 0.50, 'name': 'باراغواي', 'flag': 'py', 'code': '+595', 'enabled': True},
-    'BO': {'sell': 0.30, 'buy': 0.50, 'name': 'بوليفيا', 'flag': 'bo', 'code': '+591', 'enabled': True},
-    'EC': {'sell': 0.40, 'buy': 0.60, 'name': 'الإكوادور', 'flag': 'ec', 'code': '+593', 'enabled': True},
-    'CR': {'sell': 0.55, 'buy': 0.75, 'name': 'كوستاريكا', 'flag': 'cr', 'code': '+506', 'enabled': True},
-    'PA': {'sell': 0.60, 'buy': 0.80, 'name': 'بنما', 'flag': 'pa', 'code': '+507', 'enabled': True},
-    'DO': {'sell': 0.45, 'buy': 0.65, 'name': 'جمهورية الدومينيكان', 'flag': 'do', 'code': '+1', 'enabled': True},
-    'GT': {'sell': 0.35, 'buy': 0.55, 'name': 'غواتيمالا', 'flag': 'gt', 'code': '+502', 'enabled': True},
-    'SV': {'sell': 0.30, 'buy': 0.50, 'name': 'السلفادور', 'flag': 'sv', 'code': '+503', 'enabled': True},
-    'HN': {'sell': 0.25, 'buy': 0.45, 'name': 'هندوراس', 'flag': 'hn', 'code': '+504', 'enabled': True},
-    'NI': {'sell': 0.25, 'buy': 0.45, 'name': 'نيكاراغوا', 'flag': 'ni', 'code': '+505', 'enabled': True},
-    'CU': {'sell': 0.20, 'buy': 0.40, 'name': 'كوبا', 'flag': 'cu', 'code': '+53', 'enabled': True},
-    'JM': {'sell': 0.40, 'buy': 0.60, 'name': 'جامايكا', 'flag': 'jm', 'code': '+1', 'enabled': True},
-    'HT': {'sell': 0.15, 'buy': 0.35, 'name': 'هايتي', 'flag': 'ht', 'code': '+509', 'enabled': True},
-    'PR': {'sell': 0.70, 'buy': 0.90, 'name': 'بورتوريكو', 'flag': 'pr', 'code': '+1', 'enabled': True},
-    'TT': {'sell': 0.50, 'buy': 0.70, 'name': 'ترينيداد وتوباغو', 'flag': 'tt', 'code': '+1', 'enabled': True},
+    # --- Tier 1: Premium (High Price) ---
+    'KW': {'sell': 2.90, 'buy': 4.50, 'name': 'الكويت', 'flag': 'kw', 'code': '+965', 'enabled': True},
+    'IL': {'sell': 2.80, 'buy': 4.20, 'name': 'إسرائيل', 'flag': 'il', 'code': '+972', 'enabled': True},
+    'AE': {'sell': 2.50, 'buy': 3.80, 'name': 'الإمارات', 'flag': 'ae', 'code': '+971', 'enabled': True},
+    'SA': {'sell': 2.20, 'buy': 3.50, 'name': 'السعودية', 'flag': 'sa', 'code': '+966', 'enabled': True},
+    'QA': {'sell': 2.40, 'buy': 3.60, 'name': 'قطر', 'flag': 'qa', 'code': '+974', 'enabled': True},
+    'BH': {'sell': 2.30, 'buy': 3.40, 'name': 'البحرين', 'flag': 'bh', 'code': '+973', 'enabled': True},
+    'OM': {'sell': 2.10, 'buy': 3.20, 'name': 'عمان', 'flag': 'om', 'code': '+968', 'enabled': True},
+    'CH': {'sell': 2.00, 'buy': 3.00, 'name': 'سويسرا', 'flag': 'ch', 'code': '+41', 'enabled': True},
+    'NO': {'sell': 1.80, 'buy': 2.80, 'name': 'النرويج', 'flag': 'no', 'code': '+47', 'enabled': True},
+    'SE': {'sell': 1.70, 'buy': 2.60, 'name': 'السويد', 'flag': 'se', 'code': '+46', 'enabled': True},
+    'DK': {'sell': 1.60, 'buy': 2.40, 'name': 'الدنمارك', 'flag': 'dk', 'code': '+45', 'enabled': True},
+    'AU': {'sell': 1.50, 'buy': 2.20, 'name': 'أستراليا', 'flag': 'au', 'code': '+61', 'enabled': True},
+    'CA': {'sell': 1.40, 'buy': 2.10, 'name': 'كندا', 'flag': 'ca', 'code': '+1', 'enabled': True},
+    'DE': {'sell': 1.30, 'buy': 2.00, 'name': 'ألمانيا', 'flag': 'de', 'code': '+49', 'enabled': True},
+    'NL': {'sell': 1.20, 'buy': 1.80, 'name': 'هولندا', 'flag': 'nl', 'code': '+31', 'enabled': True},
+    'UK': {'sell': 1.10, 'buy': 1.70, 'name': 'المملكة المتحدة', 'flag': 'gb', 'code': '+44', 'enabled': True},
+    'US': {'sell': 1.00, 'buy': 1.60, 'name': 'الولايات المتحدة', 'flag': 'us', 'code': '+1', 'enabled': True},
+    'FR': {'sell': 0.90, 'buy': 1.40, 'name': 'فرنسا', 'flag': 'fr', 'code': '+33', 'enabled': True},
+    'JP': {'sell': 0.90, 'buy': 1.40, 'name': 'اليابان', 'flag': 'jp', 'code': '+81', 'enabled': True},
+    'KR': {'sell': 0.85, 'buy': 1.30, 'name': 'كوريا الجنوبية', 'flag': 'kr', 'code': '+82', 'enabled': True},
+    
+    # --- Tier 2: Medium Price ---
+    'ES': {'sell': 0.75, 'buy': 1.10, 'name': 'إسبانيا', 'flag': 'es', 'code': '+34', 'enabled': True},
+    'IT': {'sell': 0.70, 'buy': 1.00, 'name': 'إيطاليا', 'flag': 'it', 'code': '+39', 'enabled': True},
+    'PL': {'sell': 0.65, 'buy': 0.95, 'name': 'بولندا', 'flag': 'pl', 'code': '+48', 'enabled': True},
+    'TR': {'sell': 0.60, 'buy': 0.90, 'name': 'تركيا', 'flag': 'tr', 'code': '+90', 'enabled': True},
+    'RU': {'sell': 0.55, 'buy': 0.85, 'name': 'روسيا', 'flag': 'ru', 'code': '+7', 'enabled': True},
+    'BR': {'sell': 0.50, 'buy': 0.80, 'name': 'البرازيل', 'flag': 'br', 'code': '+55', 'enabled': True},
+    'MX': {'sell': 0.50, 'buy': 0.80, 'name': 'المكسيك', 'flag': 'mx', 'code': '+52', 'enabled': True},
+    'AR': {'sell': 0.45, 'buy': 0.75, 'name': 'الأرجنتين', 'flag': 'ar', 'code': '+54', 'enabled': True},
+    'ZA': {'sell': 0.45, 'buy': 0.75, 'name': 'جنوب أفريقيا', 'flag': 'za', 'code': '+27', 'enabled': True},
+    'IN': {'sell': 0.40, 'buy': 0.70, 'name': 'الهند', 'flag': 'in', 'code': '+91', 'enabled': True},
+    'ID': {'sell': 0.40, 'buy': 0.70, 'name': 'إندونيسيا', 'flag': 'id', 'code': '+62', 'enabled': True},
+    
+    # --- Tier 3: Low Price (Rest of World & Syria) ---
+    'SY': {'sell': 0.25, 'buy': 0.35, 'name': 'سوريا', 'flag': 'sy', 'code': '+963', 'enabled': True},
+    'EG': {'sell': 0.25, 'buy': 0.35, 'name': 'مصر', 'flag': 'eg', 'code': '+20', 'enabled': True},
+    'MA': {'sell': 0.25, 'buy': 0.35, 'name': 'المغرب', 'flag': 'ma', 'code': '+212', 'enabled': True},
+    'TN': {'sell': 0.25, 'buy': 0.35, 'name': 'تونس', 'flag': 'tn', 'code': '+216', 'enabled': True},
+    'DZ': {'sell': 0.25, 'buy': 0.35, 'name': 'الجزائر', 'flag': 'dz', 'code': '+213', 'enabled': True},
+    'NG': {'sell': 0.25, 'buy': 0.35, 'name': 'نيجيريا', 'flag': 'ng', 'code': '+234', 'enabled': True},
+    'PK': {'sell': 0.25, 'buy': 0.35, 'name': 'باكستان', 'flag': 'pk', 'code': '+92', 'enabled': True},
+    'BD': {'sell': 0.25, 'buy': 0.35, 'name': 'بنغلاديش', 'flag': 'bd', 'code': '+880', 'enabled': True},
+    'PH': {'sell': 0.25, 'buy': 0.35, 'name': 'الفلبين', 'flag': 'ph', 'code': '+63', 'enabled': True},
+    'VN': {'sell': 0.25, 'buy': 0.35, 'name': 'فيتنام', 'flag': 'vn', 'code': '+84', 'enabled': True},
+    'KE': {'sell': 0.25, 'buy': 0.35, 'name': 'كينيا', 'flag': 'ke', 'code': '+254', 'enabled': True},
+    'GH': {'sell': 0.25, 'buy': 0.35, 'name': 'غانا', 'flag': 'gh', 'code': '+233', 'enabled': True},
+    'UA': {'sell': 0.30, 'buy': 0.40, 'name': 'أوكرانيا', 'flag': 'ua', 'code': '+380', 'enabled': True},
+    'RO': {'sell': 0.30, 'buy': 0.40, 'name': 'رومانيا', 'flag': 'ro', 'code': '+40', 'enabled': True},
+    'TH': {'sell': 0.30, 'buy': 0.40, 'name': 'تايلاند', 'flag': 'th', 'code': '+66', 'enabled': True},
+    'MY': {'sell': 0.30, 'buy': 0.40, 'name': 'ماليزيا', 'flag': 'my', 'code': '+60', 'enabled': True},
+    'CO': {'sell': 0.30, 'buy': 0.40, 'name': 'كولومبيا', 'flag': 'co', 'code': '+57', 'enabled': True},
+    'PE': {'sell': 0.30, 'buy': 0.40, 'name': 'بيرو', 'flag': 'pe', 'code': '+51', 'enabled': True},
+    'VE': {'sell': 0.30, 'buy': 0.40, 'name': 'فنزويلا', 'flag': 've', 'code': '+58', 'enabled': True},
+    'CL': {'sell': 0.30, 'buy': 0.40, 'name': 'تشيلي', 'flag': 'cl', 'code': '+56', 'enabled': True},
+    'CN': {'sell': 0.30, 'buy': 0.40, 'name': 'الصين', 'flag': 'cn', 'code': '+86', 'enabled': True},
+    'HK': {'sell': 0.50, 'buy': 0.70, 'name': 'هونغ كونغ', 'flag': 'hk', 'code': '+852', 'enabled': True},
+    'TW': {'sell': 0.40, 'buy': 0.60, 'name': 'تايوان', 'flag': 'tw', 'code': '+886', 'enabled': True},
+    'SG': {'sell': 0.60, 'buy': 0.90, 'name': 'سنغافورة', 'flag': 'sg', 'code': '+65', 'enabled': True},
+    'JO': {'sell': 0.30, 'buy': 0.45, 'name': 'الأردن', 'flag': 'jo', 'code': '+962', 'enabled': True},
+    'LB': {'sell': 0.30, 'buy': 0.45, 'name': 'لبنان', 'flag': 'lb', 'code': '+961', 'enabled': True},
+    'IQ': {'sell': 0.30, 'buy': 0.45, 'name': 'العراق', 'flag': 'iq', 'code': '+964', 'enabled': True},
+    'YE': {'sell': 0.25, 'buy': 0.35, 'name': 'اليمن', 'flag': 'ye', 'code': '+967', 'enabled': True},
+    'LY': {'sell': 0.25, 'buy': 0.35, 'name': 'ليبيا', 'flag': 'ly', 'code': '+218', 'enabled': True},
+    'SD': {'sell': 0.25, 'buy': 0.35, 'name': 'السودان', 'flag': 'sd', 'code': '+249', 'enabled': True},
+    'IR': {'sell': 0.30, 'buy': 0.40, 'name': 'إيران', 'flag': 'ir', 'code': '+98', 'enabled': True},
+    'AF': {'sell': 0.25, 'buy': 0.35, 'name': 'أفغانستان', 'flag': 'af', 'code': '+93', 'enabled': True},
+    'AZ': {'sell': 0.30, 'buy': 0.45, 'name': 'أذربيجان', 'flag': 'az', 'code': '+994', 'enabled': True},
+    'GE': {'sell': 0.30, 'buy': 0.45, 'name': 'جورجيا', 'flag': 'ge', 'code': '+995', 'enabled': True},
+    'AM': {'sell': 0.30, 'buy': 0.45, 'name': 'أرمينيا', 'flag': 'am', 'code': '+374', 'enabled': True},
+    'KZ': {'sell': 0.30, 'buy': 0.45, 'name': 'كازاخستان', 'flag': 'kz', 'code': '+7', 'enabled': True},
+    'UZ': {'sell': 0.25, 'buy': 0.40, 'name': 'أوزبكستان', 'flag': 'uz', 'code': '+998', 'enabled': True},
+    'NP': {'sell': 0.25, 'buy': 0.35, 'name': 'نيبال', 'flag': 'np', 'code': '+977', 'enabled': True},
+    'LK': {'sell': 0.25, 'buy': 0.35, 'name': 'سريلانكا', 'flag': 'lk', 'code': '+94', 'enabled': True},
+    'MM': {'sell': 0.25, 'buy': 0.35, 'name': 'ميانمار', 'flag': 'mm', 'code': '+95', 'enabled': True},
+    'KH': {'sell': 0.25, 'buy': 0.35, 'name': 'كمبودجا', 'flag': 'kh', 'code': '+855', 'enabled': True},
+    'LA': {'sell': 0.25, 'buy': 0.35, 'name': 'لاوس', 'flag': 'la', 'code': '+856', 'enabled': True},
+    'MN': {'sell': 0.25, 'buy': 0.35, 'name': 'منغوليا', 'flag': 'mn', 'code': '+976', 'enabled': True},
+    'KG': {'sell': 0.25, 'buy': 0.35, 'name': 'قيرغيزستان', 'flag': 'kg', 'code': '+996', 'enabled': True},
+    'TJ': {'sell': 0.25, 'buy': 0.35, 'name': 'طاجيكستان', 'flag': 'tj', 'code': '+992', 'enabled': True},
+    'TM': {'sell': 0.25, 'buy': 0.35, 'name': 'تركمانستان', 'flag': 'tm', 'code': '+993', 'enabled': True},
+    'BY': {'sell': 0.30, 'buy': 0.45, 'name': 'بيلاروسيا', 'flag': 'by', 'code': '+375', 'enabled': True},
+    'MD': {'sell': 0.25, 'buy': 0.40, 'name': 'مولدوفا', 'flag': 'md', 'code': '+373', 'enabled': True},
+    'BG': {'sell': 0.35, 'buy': 0.50, 'name': 'بلغاريا', 'flag': 'bg', 'code': '+359', 'enabled': True},
+    'RS': {'sell': 0.30, 'buy': 0.45, 'name': 'صربيا', 'flag': 'rs', 'code': '+381', 'enabled': True},
+    'HR': {'sell': 0.40, 'buy': 0.60, 'name': 'كرواتيا', 'flag': 'hr', 'code': '+385', 'enabled': True},
+    'SI': {'sell': 0.35, 'buy': 0.55, 'name': 'سلوفينيا', 'flag': 'si', 'code': '+386', 'enabled': True},
+    'SK': {'sell': 0.35, 'buy': 0.55, 'name': 'سلوفاكيا', 'flag': 'sk', 'code': '+421', 'enabled': True},
+    'BA': {'sell': 0.25, 'buy': 0.40, 'name': 'البوسنة', 'flag': 'ba', 'code': '+387', 'enabled': True},
+    'MK': {'sell': 0.25, 'buy': 0.40, 'name': 'مقدونيا', 'flag': 'mk', 'code': '+389', 'enabled': True},
+    'AL': {'sell': 0.25, 'buy': 0.40, 'name': 'ألبانيا', 'flag': 'al', 'code': '+355', 'enabled': True},
+    'ME': {'sell': 0.25, 'buy': 0.40, 'name': 'الجبل الأسود', 'flag': 'me', 'code': '+382', 'enabled': True},
+    'XK': {'sell': 0.25, 'buy': 0.40, 'name': 'كوسوفو', 'flag': 'xk', 'code': '+383', 'enabled': True},
+    'IS': {'sell': 0.50, 'buy': 0.80, 'name': 'آيسلندا', 'flag': 'is', 'code': '+354', 'enabled': True},
+    'LU': {'sell': 0.60, 'buy': 0.90, 'name': 'لوكسمبورغ', 'flag': 'lu', 'code': '+352', 'enabled': True},
+    'MT': {'sell': 0.50, 'buy': 0.80, 'name': 'مالطا', 'flag': 'mt', 'code': '+356', 'enabled': True},
+    'CY': {'sell': 0.40, 'buy': 0.60, 'name': 'قبرص', 'flag': 'cy', 'code': '+357', 'enabled': True},
+    'EE': {'sell': 0.40, 'buy': 0.60, 'name': 'إستونيا', 'flag': 'ee', 'code': '+372', 'enabled': True},
+    'LV': {'sell': 0.40, 'buy': 0.60, 'name': 'لاتفيا', 'flag': 'lv', 'code': '+371', 'enabled': True},
+    'LT': {'sell': 0.35, 'buy': 0.55, 'name': 'ليتوانيا', 'flag': 'lt', 'code': '+370', 'enabled': True},
+    'UY': {'sell': 0.30, 'buy': 0.45, 'name': 'أوروغواي', 'flag': 'uy', 'code': '+598', 'enabled': True},
+    'PY': {'sell': 0.25, 'buy': 0.40, 'name': 'باراغواي', 'flag': 'py', 'code': '+595', 'enabled': True},
+    'BO': {'sell': 0.25, 'buy': 0.40, 'name': 'بوليفيا', 'flag': 'bo', 'code': '+591', 'enabled': True},
+    'EC': {'sell': 0.25, 'buy': 0.40, 'name': 'الإكوادور', 'flag': 'ec', 'code': '+593', 'enabled': True},
+    'CR': {'sell': 0.30, 'buy': 0.45, 'name': 'كوستاريكا', 'flag': 'cr', 'code': '+506', 'enabled': True},
+    'PA': {'sell': 0.30, 'buy': 0.45, 'name': 'بنما', 'flag': 'pa', 'code': '+507', 'enabled': True},
+    'DO': {'sell': 0.25, 'buy': 0.40, 'name': 'الدومينيكان', 'flag': 'do', 'code': '+1', 'enabled': True},
+    'GT': {'sell': 0.25, 'buy': 0.40, 'name': 'غواتيمالا', 'flag': 'gt', 'code': '+502', 'enabled': True},
+    'SV': {'sell': 0.25, 'buy': 0.40, 'name': 'السلفادور', 'flag': 'sv', 'code': '+503', 'enabled': True},
+    'HN': {'sell': 0.25, 'buy': 0.40, 'name': 'هندوراس', 'flag': 'hn', 'code': '+504', 'enabled': True},
+    'NI': {'sell': 0.25, 'buy': 0.40, 'name': 'نيكاراغوا', 'flag': 'ni', 'code': '+505', 'enabled': True},
+    'CU': {'sell': 0.25, 'buy': 0.40, 'name': 'كوبا', 'flag': 'cu', 'code': '+53', 'enabled': True},
+    'JM': {'sell': 0.25, 'buy': 0.40, 'name': 'جامايكا', 'flag': 'jm', 'code': '+1', 'enabled': True},
+    'HT': {'sell': 0.25, 'buy': 0.35, 'name': 'هايتي', 'flag': 'ht', 'code': '+509', 'enabled': True},
+    'PR': {'sell': 0.30, 'buy': 0.45, 'name': 'بورتوريكو', 'flag': 'pr', 'code': '+1', 'enabled': True},
+    'TT': {'sell': 0.25, 'buy': 0.40, 'name': 'ترينيداد', 'flag': 'tt', 'code': '+1', 'enabled': True},
+    'NZ': {'sell': 0.50, 'buy': 0.75, 'name': 'نيوزيلندا', 'flag': 'nz', 'code': '+64', 'enabled': True},
+    'IE': {'sell': 0.50, 'buy': 0.75, 'name': 'أيرلندا', 'flag': 'ie', 'code': '+353', 'enabled': True},
+    'AT': {'sell': 0.60, 'buy': 0.90, 'name': 'النمسا', 'flag': 'at', 'code': '+43', 'enabled': True},
+    'BE': {'sell': 0.50, 'buy': 0.75, 'name': 'بلجيكا', 'flag': 'be', 'code': '+32', 'enabled': True},
+    'PT': {'sell': 0.45, 'buy': 0.70, 'name': 'البرتغال', 'flag': 'pt', 'code': '+351', 'enabled': True},
+    'GR': {'sell': 0.40, 'buy': 0.60, 'name': 'اليونان', 'flag': 'gr', 'code': '+30', 'enabled': True},
+    'FI': {'sell': 0.45, 'buy': 0.70, 'name': 'فنلندا', 'flag': 'fi', 'code': '+358', 'enabled': True},
+    'CZ': {'sell': 0.40, 'buy': 0.60, 'name': 'التشيك', 'flag': 'cz', 'code': '+420', 'enabled': True},
+    'HU': {'sell': 0.35, 'buy': 0.55, 'name': 'المجر', 'flag': 'hu', 'code': '+36', 'enabled': True},
 }
 
 DEFAULT_SETTINGS = {
-    'minDeposit': 1.5,
+    'minDeposit': 0.1,
     'minWithdrawal': 3.0,
     'referralBonus': 0.15,
     'fraudThreshold': 0.65,
@@ -164,8 +169,8 @@ DEFAULT_SETTINGS = {
     'siteName': 'TeleNum',
     'siteLogo': '',
     'siteColor': '#0088cc',
-    'fakeMode': False, # الوضع الوهمي
-    'fakeStockCount': 4713 # عدد الأرقام الوهمية
+    'fakeMode': False,
+    'fakeStockCount': 4713
 }
 
 # ============== Firebase ==============
@@ -378,7 +383,13 @@ async def tg_get_messages(session_str):
     
     return messages
 
-def verify_bsc_tx(txid):
+# ============== Deposit Verification ==============
+def verify_bsc_tx(txid, expected_amount=None):
+    """
+    التحقق من المعاملة.
+    إذا تم تمرير expected_amount، نتأكد أن المبلغ المودع يساويه (بما فيه الرسوم).
+    إذا لم يمرر، نقبل أي مبلغ أعلى من الحد الأدنى.
+    """
     try:
         r = requests.get(f"https://api.bscscan.com/api", params={
             'module': 'proxy',
@@ -389,28 +400,36 @@ def verify_bsc_tx(txid):
         
         data = r.json()
         if not data.get('result'):
-            return False, 0
+            return False, 0, "لم يتم العثور على المعاملة"
         
         tx = data['result']
         to = tx.get('to', '').lower()
         
+        # 1. Check USDT Transfer
         if to == USDT_CONTRACT_BSC.lower():
             inp = tx.get('input', '')
             if inp.startswith('0xa9059cbb'):
                 recipient = '0x' + inp[34:74]
-                if recipient.lower() == WALLET_ADDRESS.lower():
-                    amount = int(inp[74:138], 16) / 1e18
-                    if amount >= 1.5:
-                        return True, amount
+                if recipient.lower() == DEPOSIT_WALLET.lower():
+                    amount_raw = int(inp[74:138], 16)
+                    amount = amount_raw / 1e18
+                    
+                    # Minimum deposit check
+                    if amount < 0.1: 
+                        return False, 0, "الحد الأدنى للإيداع 0.1$"
+                    
+                    # Expected amount check (for deposit request)
+                    if expected_amount and abs(amount - expected_amount) > 0.0001:
+                        return False, 0, f"المبلغ لا يطابق. المطلوب: {expected_amount}، المستلم: {amount:.2f}"
+                    
+                    return True, amount, "تم التحقق من USDT"
         
-        if to == WALLET_ADDRESS.lower():
-            val = int(tx.get('value', '0'), 16) / 1e18
-            if val >= 0.004:
-                return True, val * 350
-        
-        return False, 0
-    except:
-        return False, 0
+        # 2. Check BNB Transfer (Optional logic, keeping simplified for USDT focus)
+        # Could be added here if needed for BNB deposits
+
+        return False, 0, "المعاملة ليست تحويل USDT صالح للمحفظة المحددة"
+    except Exception as e:
+        return False, 0, str(e)
 
 # ============== HTML Template Path ==============
 def get_index_html():
@@ -437,7 +456,6 @@ def stats():
     available = sum(1 for n in numbers.values() if n and n.get('status') == 'available')
     sold = sum(1 for n in numbers.values() if n and n.get('status') == 'sold')
     
-    # Apply Fake Mode
     if settings.get('fakeMode'):
         available = settings.get('fakeStockCount', 4713)
     
@@ -445,7 +463,8 @@ def stats():
         'availableNumbers': available,
         'soldNumbers': sold,
         'totalUsers': len([u for u in users.values() if u]),
-        'totalCountries': len([c for c in countries.values() if c and c.get('enabled', True)])
+        'totalCountries': len([c for c in countries.values() if c and c.get('enabled', True)]),
+        'depositWallet': DEPOSIT_WALLET
     })
 
 @app.route('/api/countries')
@@ -459,9 +478,7 @@ def countries_api():
         if info and info.get('enabled', True):
             count = sum(1 for n in numbers.values() if n and n.get('status') == 'available' and n.get('country') == code)
             
-            # Apply Fake Mode
             if settings.get('fakeMode'):
-                # Randomize stock a bit based on country code to make it look real
                 import hashlib
                 hash_val = int(hashlib.md5(code.encode()).hexdigest(), 16) % 500
                 count = settings.get('fakeStockCount', 4713) - hash_val
@@ -500,7 +517,7 @@ def register():
     email = data.get('email', '').strip().lower()
     password = data.get('password', '')
     ref_code = data.get('referralCode', '').strip()
-    device_id = data.get('deviceId') # معرف الجهاز من الواجهة الأمامية
+    device_id = data.get('deviceId')
     
     if not all([username, email, password]):
         return jsonify({'success': False, 'error': 'جميع الحقول مطلوبة'})
@@ -531,7 +548,7 @@ def register():
         'banned': False,
         'createdAt': datetime.now().isoformat(),
         'fingerprint': fp,
-        'deviceId': device_id # تخزين معرف الجهاز
+        'deviceId': device_id
     }
     
     uid = fb_push('users', new_user)
@@ -600,7 +617,6 @@ def login():
 
 @app.route('/api/auth/auto-login', methods=['POST'])
 def auto_login():
-    # تسجيل دخول تلقائي باستخدام معرف الجهاز المخزن محلياً
     data = request.json or {}
     device_id = data.get('deviceId')
     
@@ -802,12 +818,13 @@ def sell_verify():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
 
-# Deposit
+# Deposit - Auto Verification
 @app.route('/api/deposit', methods=['POST'])
 @verify_token
 def deposit():
     data = request.json or {}
     txid = data.get('txid', '').strip()
+    expected_amount = data.get('amount') # المبلغ الذي يريده المستخدم (شامل الرسوم)
     
     if not txid.startswith('0x') or len(txid) < 60:
         return jsonify({'success': False, 'error': 'TXID غير صحيح'})
@@ -815,11 +832,16 @@ def deposit():
     deposits = fb_get('deposits') or {}
     for d in deposits.values():
         if d and d.get('txid') == txid:
-            return jsonify({'success': False, 'error': 'المعاملة مستخدمة'})
+            return jsonify({'success': False, 'error': 'المعاملة مستخدمة سابقاً'})
     
-    valid, amount = verify_bsc_tx(txid)
+    # التحقق من المعاملة
+    valid, amount, msg = verify_bsc_tx(txid, expected_amount)
+    
     if not valid:
-        return jsonify({'success': False, 'error': 'المعاملة غير صالحة'})
+        return jsonify({'success': False, 'error': msg or 'المعاملة غير صالحة أو المبلغ غير مطابق'})
+    
+    # إذا لم يحدد المستخدم مبلغ، نأخذ المبلغ الفعلي من المعاملة
+    # أو إذا حدد، نستخدم المبلغ الفعلي (لأن التحقق تم)
     
     fb_push('deposits', {'userId': request.user_id, 'txid': txid, 'amount': amount, 'status': 'approved', 'createdAt': datetime.now().isoformat()})
     
@@ -828,7 +850,7 @@ def deposit():
     
     return jsonify({'success': True, 'amount': amount, 'newBalance': new_balance})
 
-# Withdraw
+# Withdraw - User specifies wallet
 @app.route('/api/withdraw', methods=['POST'])
 @verify_token
 def withdraw():
@@ -842,7 +864,7 @@ def withdraw():
     if amount < min_w:
         return jsonify({'success': False, 'error': f'الحد الأدنى ${min_w}'})
     if not address.startswith('0x') or len(address) != 42:
-        return jsonify({'success': False, 'error': 'عنوان غير صحيح'})
+        return jsonify({'success': False, 'error': 'عنوان محفظة السحب غير صحيح'})
     
     balance = request.user.get('balance', 0)
     if balance < amount:
@@ -855,7 +877,7 @@ def withdraw():
         'userId': request.user_id,
         'username': request.user.get('username'),
         'amount': amount,
-        'address': address,
+        'address': address, # المحفظة التي يريد المستخدم الإرسال إليها
         'status': 'pending',
         'createdAt': datetime.now().isoformat()
     })
