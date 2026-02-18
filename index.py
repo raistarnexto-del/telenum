@@ -1,16 +1,12 @@
 from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
-import json
 import hashlib
 import secrets
 import requests
 import asyncio
 import re
-import os
-import random
 from datetime import datetime
 from functools import wraps
-from concurrent.futures import ThreadPoolExecutor
 
 app = Flask(__name__)
 CORS(app)
@@ -23,12 +19,11 @@ BSCSCAN_API_KEY = "8BHURRRGKXD35BPGQZ8E94CVEVAUNMD9UF"
 USDT_CONTRACT_BSC = "0x55d398326f99059fF775485246999027B3197955"
 FIREBASE_URL = "https://lolaminig-afea4-default-rtdb.firebaseio.com"
 
-executor = ThreadPoolExecutor(max_workers=4)
 phone_sessions = {}
 
-# ============== 90 Countries with Updated Pricing ==============
+# ============== 90 Countries ==============
 DEFAULT_COUNTRIES = {
-    # === الخليج (أسعار مرتفعة) ===
+    # الخليج (أسعار مرتفعة)
     'KW': {'sell': 3.00, 'buy': 4.00, 'name': 'الكويت', 'flag': 'kw', 'code': '+965', 'enabled': True},
     'QA': {'sell': 2.50, 'buy': 3.50, 'name': 'قطر', 'flag': 'qa', 'code': '+974', 'enabled': True},
     'AE': {'sell': 2.00, 'buy': 2.80, 'name': 'الإمارات', 'flag': 'ae', 'code': '+971', 'enabled': True},
@@ -36,7 +31,7 @@ DEFAULT_COUNTRIES = {
     'OM': {'sell': 1.80, 'buy': 2.50, 'name': 'عُمان', 'flag': 'om', 'code': '+968', 'enabled': True},
     'SA': {'sell': 1.50, 'buy': 2.00, 'name': 'السعودية', 'flag': 'sa', 'code': '+966', 'enabled': True},
     
-    # === الشرق الأوسط ===
+    # الشرق الأوسط
     'EG': {'sell': 0.40, 'buy': 0.60, 'name': 'مصر', 'flag': 'eg', 'code': '+20', 'enabled': True},
     'IQ': {'sell': 0.50, 'buy': 0.75, 'name': 'العراق', 'flag': 'iq', 'code': '+964', 'enabled': True},
     'JO': {'sell': 0.80, 'buy': 1.20, 'name': 'الأردن', 'flag': 'jo', 'code': '+962', 'enabled': True},
@@ -47,13 +42,13 @@ DEFAULT_COUNTRIES = {
     'LY': {'sell': 0.70, 'buy': 1.00, 'name': 'ليبيا', 'flag': 'ly', 'code': '+218', 'enabled': True},
     'SD': {'sell': 0.50, 'buy': 0.75, 'name': 'السودان', 'flag': 'sd', 'code': '+249', 'enabled': True},
     
-    # === شمال أفريقيا ===
+    # شمال أفريقيا
     'MA': {'sell': 0.55, 'buy': 0.85, 'name': 'المغرب', 'flag': 'ma', 'code': '+212', 'enabled': True},
     'DZ': {'sell': 0.50, 'buy': 0.80, 'name': 'الجزائر', 'flag': 'dz', 'code': '+213', 'enabled': True},
     'TN': {'sell': 0.55, 'buy': 0.85, 'name': 'تونس', 'flag': 'tn', 'code': '+216', 'enabled': True},
     'MR': {'sell': 0.60, 'buy': 0.90, 'name': 'موريتانيا', 'flag': 'mr', 'code': '+222', 'enabled': True},
     
-    # === آسيا (أسعار منخفضة) ===
+    # آسيا
     'MM': {'sell': 0.20, 'buy': 0.35, 'name': 'ميانمار', 'flag': 'mm', 'code': '+95', 'enabled': True},
     'VN': {'sell': 0.22, 'buy': 0.38, 'name': 'فيتنام', 'flag': 'vn', 'code': '+84', 'enabled': True},
     'LA': {'sell': 0.25, 'buy': 0.40, 'name': 'لاوس', 'flag': 'la', 'code': '+856', 'enabled': True},
@@ -74,7 +69,7 @@ DEFAULT_COUNTRIES = {
     'TW': {'sell': 1.60, 'buy': 2.50, 'name': 'تايوان', 'flag': 'tw', 'code': '+886', 'enabled': True},
     'SG': {'sell': 1.80, 'buy': 2.80, 'name': 'سنغافورة', 'flag': 'sg', 'code': '+65', 'enabled': True},
     
-    # === وسط آسيا وروسيا ===
+    # وسط آسيا وروسيا
     'RU': {'sell': 0.35, 'buy': 0.55, 'name': 'روسيا', 'flag': 'ru', 'code': '+7', 'enabled': True},
     'KZ': {'sell': 0.38, 'buy': 0.60, 'name': 'كازاخستان', 'flag': 'kz', 'code': '+7', 'enabled': True},
     'UZ': {'sell': 0.35, 'buy': 0.55, 'name': 'أوزبكستان', 'flag': 'uz', 'code': '+998', 'enabled': True},
@@ -85,7 +80,7 @@ DEFAULT_COUNTRIES = {
     'GE': {'sell': 0.50, 'buy': 0.80, 'name': 'جورجيا', 'flag': 'ge', 'code': '+995', 'enabled': True},
     'AM': {'sell': 0.45, 'buy': 0.70, 'name': 'أرمينيا', 'flag': 'am', 'code': '+374', 'enabled': True},
     
-    # === أوروبا الشرقية ===
+    # أوروبا الشرقية
     'UA': {'sell': 0.40, 'buy': 0.65, 'name': 'أوكرانيا', 'flag': 'ua', 'code': '+380', 'enabled': True},
     'PL': {'sell': 0.50, 'buy': 0.80, 'name': 'بولندا', 'flag': 'pl', 'code': '+48', 'enabled': True},
     'RO': {'sell': 0.45, 'buy': 0.70, 'name': 'رومانيا', 'flag': 'ro', 'code': '+40', 'enabled': True},
@@ -105,9 +100,8 @@ DEFAULT_COUNTRIES = {
     'MK': {'sell': 0.50, 'buy': 0.80, 'name': 'مقدونيا', 'flag': 'mk', 'code': '+389', 'enabled': True},
     'BA': {'sell': 0.55, 'buy': 0.85, 'name': 'البوسنة', 'flag': 'ba', 'code': '+387', 'enabled': True},
     'ME': {'sell': 0.60, 'buy': 0.95, 'name': 'الجبل الأسود', 'flag': 'me', 'code': '+382', 'enabled': True},
-    'XK': {'sell': 0.55, 'buy': 0.85, 'name': 'كوسوفو', 'flag': 'xk', 'code': '+383', 'enabled': True},
     
-    # === أوروبا الغربية ===
+    # أوروبا الغربية
     'GB': {'sell': 0.70, 'buy': 1.10, 'name': 'بريطانيا', 'flag': 'gb', 'code': '+44', 'enabled': True},
     'DE': {'sell': 1.00, 'buy': 1.60, 'name': 'ألمانيا', 'flag': 'de', 'code': '+49', 'enabled': True},
     'FR': {'sell': 0.90, 'buy': 1.40, 'name': 'فرنسا', 'flag': 'fr', 'code': '+33', 'enabled': True},
@@ -128,7 +122,7 @@ DEFAULT_COUNTRIES = {
     'TR': {'sell': 0.50, 'buy': 0.80, 'name': 'تركيا', 'flag': 'tr', 'code': '+90', 'enabled': True},
     'IR': {'sell': 0.60, 'buy': 0.95, 'name': 'إيران', 'flag': 'ir', 'code': '+98', 'enabled': True},
     
-    # === أفريقيا ===
+    # أفريقيا
     'NG': {'sell': 0.35, 'buy': 0.55, 'name': 'نيجيريا', 'flag': 'ng', 'code': '+234', 'enabled': True},
     'ZA': {'sell': 0.45, 'buy': 0.70, 'name': 'جنوب أفريقيا', 'flag': 'za', 'code': '+27', 'enabled': True},
     'KE': {'sell': 0.40, 'buy': 0.65, 'name': 'كينيا', 'flag': 'ke', 'code': '+254', 'enabled': True},
@@ -138,28 +132,19 @@ DEFAULT_COUNTRIES = {
     'UG': {'sell': 0.40, 'buy': 0.65, 'name': 'أوغندا', 'flag': 'ug', 'code': '+256', 'enabled': True},
     'SO': {'sell': 0.50, 'buy': 0.80, 'name': 'الصومال', 'flag': 'so', 'code': '+252', 'enabled': True},
     'DJ': {'sell': 0.60, 'buy': 0.95, 'name': 'جيبوتي', 'flag': 'dj', 'code': '+253', 'enabled': True},
-    'CM': {'sell': 0.45, 'buy': 0.70, 'name': 'الكاميرون', 'flag': 'cm', 'code': '+237', 'enabled': True},
-    'SN': {'sell': 0.50, 'buy': 0.80, 'name': 'السنغال', 'flag': 'sn', 'code': '+221', 'enabled': True},
-    'CI': {'sell': 0.50, 'buy': 0.80, 'name': 'ساحل العاج', 'flag': 'ci', 'code': '+225', 'enabled': True},
     
-    # === أمريكا الشمالية ===
+    # أمريكا
     'US': {'sell': 0.50, 'buy': 0.80, 'name': 'أمريكا', 'flag': 'us', 'code': '+1', 'enabled': True},
     'CA': {'sell': 0.60, 'buy': 0.95, 'name': 'كندا', 'flag': 'ca', 'code': '+1', 'enabled': True},
     'MX': {'sell': 0.50, 'buy': 0.80, 'name': 'المكسيك', 'flag': 'mx', 'code': '+52', 'enabled': True},
-    
-    # === أمريكا الجنوبية ===
     'BR': {'sell': 0.40, 'buy': 0.65, 'name': 'البرازيل', 'flag': 'br', 'code': '+55', 'enabled': True},
     'AR': {'sell': 0.45, 'buy': 0.70, 'name': 'الأرجنتين', 'flag': 'ar', 'code': '+54', 'enabled': True},
     'CO': {'sell': 0.40, 'buy': 0.65, 'name': 'كولومبيا', 'flag': 'co', 'code': '+57', 'enabled': True},
     'PE': {'sell': 0.45, 'buy': 0.70, 'name': 'بيرو', 'flag': 'pe', 'code': '+51', 'enabled': True},
     'CL': {'sell': 0.55, 'buy': 0.85, 'name': 'تشيلي', 'flag': 'cl', 'code': '+56', 'enabled': True},
     'VE': {'sell': 0.50, 'buy': 0.80, 'name': 'فنزويلا', 'flag': 've', 'code': '+58', 'enabled': True},
-    'EC': {'sell': 0.50, 'buy': 0.80, 'name': 'الإكوادور', 'flag': 'ec', 'code': '+593', 'enabled': True},
-    'BO': {'sell': 0.45, 'buy': 0.70, 'name': 'بوليفيا', 'flag': 'bo', 'code': '+591', 'enabled': True},
-    'PY': {'sell': 0.45, 'buy': 0.70, 'name': 'باراغواي', 'flag': 'py', 'code': '+595', 'enabled': True},
-    'UY': {'sell': 0.60, 'buy': 0.95, 'name': 'أوروغواي', 'flag': 'uy', 'code': '+598', 'enabled': True},
     
-    # === أستراليا وأوقيانوسيا ===
+    # أستراليا
     'AU': {'sell': 1.20, 'buy': 1.90, 'name': 'أستراليا', 'flag': 'au', 'code': '+61', 'enabled': True},
     'NZ': {'sell': 1.30, 'buy': 2.00, 'name': 'نيوزيلندا', 'flag': 'nz', 'code': '+64', 'enabled': True},
 }
@@ -169,21 +154,10 @@ DEFAULT_SETTINGS = {
     'minWithdrawal': 3.0,
     'referralBonus': 0.05,
     'referralBonusNewUser': 0.05,
-    'fraudThreshold': 0.85,
-    'maintenanceMode': False,
-    'registrationEnabled': True,
-    'buyEnabled': True,
-    'sellEnabled': True,
-    'siteName': 'TeleNum',
-    'siteLogo': '',
-    'siteColor': '#0088cc',
-    'fakeMode': False,
-    'fakeStockCount': 5000,
-    'fakeStockRandom': True,
-    'fakeStockOut': False
+    'fraudThreshold': 0.80,
 }
 
-# ============== Firebase Helpers ==============
+# ============== Firebase ==============
 def fb_get(path):
     try:
         r = requests.get(f"{FIREBASE_URL}/{path}.json", timeout=10)
@@ -221,18 +195,18 @@ def fb_delete(path):
 
 # ============== Helpers ==============
 def get_countries():
-    countries = fb_get('countries')
-    if not countries:
+    c = fb_get('countries')
+    if not c:
         fb_set('countries', DEFAULT_COUNTRIES)
         return DEFAULT_COUNTRIES
-    return countries
+    return c
 
 def get_settings():
-    settings = fb_get('settings')
-    if not settings:
+    s = fb_get('settings')
+    if not s:
         fb_set('settings', DEFAULT_SETTINGS)
         return DEFAULT_SETTINGS
-    return {**DEFAULT_SETTINGS, **settings}
+    return {**DEFAULT_SETTINGS, **s}
 
 def generate_token():
     return secrets.token_hex(32)
@@ -253,41 +227,18 @@ def detect_country(phone):
                 matched = code
     return matched
 
-def get_fingerprint(req):
-    return {
-        'ip': req.headers.get('X-Forwarded-For', req.headers.get('X-Real-IP', req.remote_addr)),
-        'ua': req.headers.get('User-Agent', ''),
-        'lang': req.headers.get('Accept-Language', ''),
-    }
-
-def check_fraud(user_id, fingerprint, device_id=None):
-    """التحقق من الاحتيال - منع الإحالة الذاتية"""
-    fps = fb_get('fingerprints') or {}
-    settings = get_settings()
-    threshold = settings.get('fraudThreshold', 0.85)
+def check_same_device(device_id, user_id=None):
+    """التحقق من أن الجهاز غير مستخدم من حساب آخر"""
+    if not device_id:
+        return False, None
     
-    for fp_id, fp_data in fps.items():
-        if fp_data and fp_data.get('userId') != user_id:
-            # التحقق من Device ID أولاً (أقوى طريقة)
-            if device_id and fp_data.get('deviceId') == device_id:
-                return True, fp_data.get('userId'), 1.0
-            
-            # التحقق من البصمة الرقمية
-            matches = 0
-            keys = ['ua', 'lang', 'canvas', 'webgl', 'cores', 'memory', 'touch', 'screen', 
-                    'timezone', 'platform', 'fonts', 'audio', 'webgl_vendor', 'webgl_renderer', 
-                    'color_depth', 'pixel_depth', 'device_pixel_ratio', 'hardware_concurrency']
-            total = len(keys)
-            
-            for k in keys:
-                if fp_data.get(k) and fp_data.get(k) == fingerprint.get(k):
-                    matches += 1
-            
-            similarity = matches / total if total > 0 else 0
-            if similarity >= threshold:
-                return True, fp_data.get('userId'), similarity
-    
-    return False, None, 0
+    users = fb_get('users') or {}
+    for uid, u in users.items():
+        if u and u.get('deviceId') == device_id:
+            if user_id and uid == user_id:
+                continue
+            return True, uid
+    return False, None
 
 def verify_token(f):
     @wraps(f)
@@ -343,7 +294,7 @@ async def tg_verify(phone, code, password=None):
     from telethon.errors import PhoneCodeInvalidError, SessionPasswordNeededError
     
     if phone not in phone_sessions:
-        return False, "اطلب كود جديد", None
+        return False, "أعد إرسال الكود", None
     
     data = phone_sessions[phone]
     client = TelegramClient(StringSession(data['session']), TELEGRAM_API_ID, TELEGRAM_API_HASH)
@@ -362,15 +313,33 @@ async def tg_verify(phone, code, password=None):
                 del phone_sessions[phone]
                 return True, "تم", session
             except:
-                return False, "كلمة سر 2FA خاطئة", None
-        else:
-            return False, "2FA_REQUIRED", None
+                return False, "كلمة مرور 2FA خاطئة", None
+        return False, "2FA_REQUIRED", None
     except PhoneCodeInvalidError:
         return False, "الكود غير صحيح", None
     except Exception as e:
         return False, str(e), None
     finally:
         await client.disconnect()
+
+async def tg_check_sessions(session_str):
+    """التحقق من عدد الجلسات النشطة"""
+    from telethon import TelegramClient
+    from telethon.sessions import StringSession
+    
+    client = TelegramClient(StringSession(session_str), TELEGRAM_API_ID, TELEGRAM_API_HASH)
+    try:
+        await client.connect()
+        if await client.is_user_authorized():
+            # الحصول على الجلسات النشطة
+            result = await client.get_entity('me')
+            # هنا يمكن إضافة تحقق من الجلسات
+            return True, 1
+    except:
+        pass
+    finally:
+        await client.disconnect()
+    return False, 0
 
 async def tg_get_messages(session_str):
     from telethon import TelegramClient
@@ -397,10 +366,9 @@ async def tg_get_messages(session_str):
     
     return messages
 
-# ============== Deposit Verification ==============
-def verify_bsc_tx(txid, expected_amount=None):
+# ============== BSC Verification ==============
+def verify_bsc_tx(txid):
     try:
-        # Get transaction details
         r = requests.get(f"https://api.bscscan.com/api", params={
             'module': 'proxy',
             'action': 'eth_getTransactionByHash',
@@ -415,25 +383,22 @@ def verify_bsc_tx(txid, expected_amount=None):
         tx = data['result']
         to = tx.get('to', '').lower()
         
-        # Check if it's a USDT transfer
         if to == USDT_CONTRACT_BSC.lower():
             inp = tx.get('input', '')
-            if inp.startswith('0xa9059cbb'):  # transfer method
+            if inp.startswith('0xa9059cbb'):
                 recipient = '0x' + inp[34:74]
                 if recipient.lower() == DEPOSIT_WALLET.lower():
                     amount_raw = int(inp[74:138], 16)
                     amount = amount_raw / 1e18
-                    
                     if amount < 0.1:
-                        return False, 0, "الحد الأدنى للإيداع 0.1$"
-                    
-                    return True, amount, "تم التحقق بنجاح"
+                        return False, 0, "الحد الأدنى 0.1$"
+                    return True, amount, "تم التحقق"
         
         return False, 0, "معاملة غير صالحة"
     except Exception as e:
         return False, 0, str(e)
 
-# ============== HTML Template ==============
+# ============== HTML ==============
 def get_index_html():
     try:
         with open('index.html', 'r', encoding='utf-8') as f:
@@ -451,22 +416,11 @@ def stats():
     numbers = fb_get('numbers') or {}
     users = fb_get('users') or {}
     countries = get_countries()
-    settings = get_settings()
     
     available = sum(1 for n in numbers.values() if n and n.get('status') == 'available')
     
-    if settings.get('fakeMode'):
-        if settings.get('fakeStockOut'):
-            available = 0
-        elif settings.get('fakeStockRandom'):
-            available = settings.get('fakeStockCount', 5000) - random.randint(0, 500)
-        else:
-            available = settings.get('fakeStockCount', 5000)
-    
     return jsonify({
         'availableNumbers': available,
-        'soldNumbers': sum(1 for n in numbers.values() if n and n.get('status') == 'sold'),
-        'totalUsers': len([u for u in users.values() if u]),
         'totalCountries': len([c for c in countries.values() if c and c.get('enabled', True)]),
         'depositWallet': DEPOSIT_WALLET
     })
@@ -475,21 +429,11 @@ def stats():
 def countries_api():
     numbers = fb_get('numbers') or {}
     countries = get_countries()
-    settings = get_settings()
     result = []
     
     for code, info in countries.items():
         if info and info.get('enabled', True):
             count = sum(1 for n in numbers.values() if n and n.get('status') == 'available' and n.get('country') == code)
-            
-            if settings.get('fakeMode') and not settings.get('fakeStockOut'):
-                if settings.get('fakeStockRandom'):
-                    count = random.randint(5, settings.get('fakeStockCount', 100))
-                else:
-                    count = settings.get('fakeStockCount', 100)
-            elif settings.get('fakeStockOut'):
-                count = 0
-            
             result.append({
                 'code': code,
                 'name': info['name'],
@@ -503,20 +447,7 @@ def countries_api():
     result.sort(key=lambda x: (-x['stock'], x['buyPrice']))
     return jsonify({'success': True, 'countries': result})
 
-@app.route('/api/settings')
-def settings_api():
-    s = get_settings()
-    return jsonify({
-        'maintenanceMode': s.get('maintenanceMode', False),
-        'registrationEnabled': s.get('registrationEnabled', True),
-        'buyEnabled': s.get('buyEnabled', True),
-        'sellEnabled': s.get('sellEnabled', True),
-        'referralBonus': s.get('referralBonus', 0.05),
-        'siteName': s.get('siteName', 'TeleNum'),
-        'siteColor': s.get('siteColor', '#0088cc')
-    })
-
-# ============== Authentication ==============
+# ============== Auth ==============
 @app.route('/api/auth/register', methods=['POST'])
 def register():
     data = request.json or {}
@@ -525,24 +456,24 @@ def register():
     password = data.get('password', '')
     ref_code = data.get('referralCode', '').strip()
     device_id = data.get('deviceId')
-    fingerprint_data = data.get('fingerprint', {})
+    fingerprint = data.get('fingerprint', {})
     
     if not all([username, email, password]):
         return jsonify({'success': False, 'error': 'جميع الحقول مطلوبة'})
     
     if len(password) < 6:
-        return jsonify({'success': False, 'error': 'كلمة المرور يجب أن تكون 6 أحرف على الأقل'})
+        return jsonify({'success': False, 'error': 'كلمة المرور قصيرة'})
+    
+    # التحقق من أن الجهاز غير مستخدم
+    device_exists, existing_uid = check_same_device(device_id)
+    if device_exists:
+        return jsonify({'success': False, 'error': 'هذا الجهاز مرتبط بحساب آخر. جهاز واحد = حساب واحد.'})
     
     users = fb_get('users') or {}
     
-    # Check if email exists
     for u in users.values():
         if u and u.get('email') == email:
-            return jsonify({'success': False, 'error': 'البريد الإلكتروني مستخدم'})
-    
-    # Build fingerprint
-    fp = get_fingerprint(request)
-    fp.update(fingerprint_data)
+            return jsonify({'success': False, 'error': 'البريد مستخدم'})
     
     token = generate_token()
     my_ref = generate_referral_code()
@@ -558,65 +489,51 @@ def register():
         'referralCount': 0,
         'referralEarnings': 0.0,
         'banned': False,
-        'createdAt': datetime.now().isoformat(),
-        'fingerprint': fp,
-        'deviceId': device_id
+        'deviceId': device_id,
+        'fingerprint': fingerprint,
+        'createdAt': datetime.now().isoformat()
     }
     
     uid = fb_push('users', new_user)
     
+    if uid and ref_code:
+        # التحقق من الإحالة
+        for ref_uid, ref_user in users.items():
+            if ref_user and ref_user.get('referralCode') == ref_code:
+                # منع الإحالة الذاتية
+                if ref_user.get('deviceId') == device_id:
+                    fb_update(f'users/{uid}', {'banned': True, 'banReason': 'محاولة إحالة ذاتية'})
+                    return jsonify({'success': False, 'error': 'لا يمكنك إحالة نفسك'})
+                
+                # التحقق من التشابه
+                ref_fp = ref_user.get('fingerprint', {})
+                matches = 0
+                keys = ['ua', 'screen', 'timezone', 'platform', 'cores', 'memory']
+                for k in keys:
+                    if ref_fp.get(k) and ref_fp.get(k) == fingerprint.get(k):
+                        matches += 1
+                
+                if matches >= 4:  # تشابه عالي
+                    fb_update(f'users/{uid}', {'banned': True, 'banReason': 'تشابه مع حساب آخر'})
+                    return jsonify({'success': False, 'error': 'تم اكتشاف نشاط مشبوه'})
+                
+                # إضافة المكافأة
+                settings = get_settings()
+                bonus = settings.get('referralBonus', 0.05)
+                
+                fb_update(f'users/{ref_uid}', {
+                    'balance': ref_user.get('balance', 0) + bonus,
+                    'referralCount': ref_user.get('referralCount', 0) + 1,
+                    'referralEarnings': ref_user.get('referralEarnings', 0) + bonus
+                })
+                
+                fb_update(f'users/{uid}', {
+                    'balance': bonus,
+                    'referredBy': ref_uid
+                })
+                break
+    
     if uid:
-        # Save fingerprint
-        fb_push('fingerprints', {
-            'userId': uid,
-            **fp,
-            'deviceId': device_id,
-            'createdAt': datetime.now().isoformat()
-        })
-        
-        # Process referral
-        if ref_code:
-            for ref_uid, ref_user in users.items():
-                if ref_user and ref_user.get('referralCode') == ref_code:
-                    # التحقق من الإحالة الذاتية
-                    is_fraud, fraud_uid, sim = check_fraud(uid, fp, device_id)
-                    
-                    if is_fraud:
-                        # حظر المستخدم الجديد
-                        fb_update(f'users/{uid}', {
-                            'banned': True,
-                            'banReason': f'محاولة إحالة ذاتية - تشابه {sim*100:.0f}%'
-                        })
-                        return jsonify({'success': False, 'error': 'تم اكتشاف محاولة احتيال. لا يمكنك إحالة نفسك.'})
-                    
-                    # التحقق من أن المحيل ليس من نفس الجهاز
-                    ref_fp = ref_user.get('fingerprint', {})
-                    ref_device = ref_user.get('deviceId')
-                    
-                    if device_id and ref_device == device_id:
-                        fb_update(f'users/{uid}', {
-                            'banned': True,
-                            'banReason': 'محاولة إحالة ذاتية - نفس الجهاز'
-                        })
-                        return jsonify({'success': False, 'error': 'لا يمكنك إحالة نفسك من نفس الجهاز.'})
-                    
-                    # Give bonus
-                    settings = get_settings()
-                    bonus_referrer = settings.get('referralBonus', 0.05)
-                    bonus_new = settings.get('referralBonusNewUser', 0.05)
-                    
-                    fb_update(f'users/{ref_uid}', {
-                        'balance': ref_user.get('balance', 0) + bonus_referrer,
-                        'referralCount': ref_user.get('referralCount', 0) + 1,
-                        'referralEarnings': ref_user.get('referralEarnings', 0) + bonus_referrer
-                    })
-                    
-                    fb_update(f'users/{uid}', {
-                        'balance': bonus_new,
-                        'referredBy': ref_uid
-                    })
-                    break
-        
         return jsonify({
             'success': True,
             'user': {
@@ -625,11 +542,13 @@ def register():
                 'email': email,
                 'balance': 0.0,
                 'token': token,
-                'referralCode': my_ref
+                'referralCode': my_ref,
+                'referralCount': 0,
+                'referralEarnings': 0.0
             }
         })
     
-    return jsonify({'success': False, 'error': 'حدث خطأ في التسجيل'})
+    return jsonify({'success': False, 'error': 'حدث خطأ'})
 
 @app.route('/api/auth/login', methods=['POST'])
 def login():
@@ -637,24 +556,22 @@ def login():
     email = data.get('email', '').strip().lower()
     password = data.get('password', '')
     device_id = data.get('deviceId')
-    fingerprint_data = data.get('fingerprint', {})
+    fingerprint = data.get('fingerprint', {})
     
     users = fb_get('users') or {}
     
     for uid, u in users.items():
         if u and u.get('email') == email and u.get('password') == hash_password(password):
             if u.get('banned'):
-                return jsonify({'success': False, 'error': f"حسابك محظور: {u.get('banReason', '')}"})
+                return jsonify({'success': False, 'error': f"محظور: {u.get('banReason', '')}"})
             
+            # تحديث Device ID عند الدخول
             token = generate_token()
-            fp = get_fingerprint(request)
-            fp.update(fingerprint_data)
-            
             fb_update(f'users/{uid}', {
                 'token': token,
-                'lastLogin': datetime.now().isoformat(),
                 'deviceId': device_id,
-                'fingerprint': fp
+                'fingerprint': fingerprint,
+                'lastLogin': datetime.now().isoformat()
             })
             
             return jsonify({
@@ -671,59 +588,44 @@ def login():
                 }
             })
     
-    return jsonify({'success': False, 'error': 'بيانات الدخول غير صحيحة'})
+    return jsonify({'success': False, 'error': 'بيانات غير صحيحة'})
 
 @app.route('/api/auth/auto-login', methods=['POST'])
 def auto_login():
     data = request.json or {}
     device_id = data.get('deviceId')
-    fingerprint_data = data.get('fingerprint', {})
     
     if not device_id:
-        return jsonify({'success': False, 'error': 'No device ID'})
-    
-    current_fp = get_fingerprint(request)
-    current_fp.update(fingerprint_data)
+        return jsonify({'success': False})
     
     users = fb_get('users') or {}
     
     for uid, u in users.items():
         if u and u.get('deviceId') == device_id:
             if u.get('banned'):
-                return jsonify({'success': False, 'error': 'الحساب محظور'})
+                return jsonify({'success': False, 'error': 'محظور'})
             
-            # Verify fingerprint similarity
-            stored_fp = u.get('fingerprint', {})
-            matches = 0
-            keys = ['ua', 'lang', 'canvas', 'webgl', 'cores', 'memory', 'touch', 'screen',
-                    'timezone', 'platform', 'color_depth', 'pixel_depth']
+            token = generate_token()
+            fb_update(f'users/{uid}', {
+                'token': token,
+                'lastLogin': datetime.now().isoformat()
+            })
             
-            for k in keys:
-                if stored_fp.get(k) and stored_fp.get(k) == current_fp.get(k):
-                    matches += 1
-            
-            if matches / len(keys) >= 0.70:
-                token = generate_token()
-                fb_update(f'users/{uid}', {
+            return jsonify({
+                'success': True,
+                'user': {
+                    'id': uid,
+                    'username': u.get('username'),
+                    'email': u.get('email'),
+                    'balance': u.get('balance', 0),
                     'token': token,
-                    'lastLogin': datetime.now().isoformat()
-                })
-                
-                return jsonify({
-                    'success': True,
-                    'user': {
-                        'id': uid,
-                        'username': u.get('username'),
-                        'email': u.get('email'),
-                        'balance': u.get('balance', 0),
-                        'token': token,
-                        'referralCode': u.get('referralCode'),
-                        'referralCount': u.get('referralCount', 0),
-                        'referralEarnings': u.get('referralEarnings', 0)
-                    }
-                })
+                    'referralCode': u.get('referralCode'),
+                    'referralCount': u.get('referralCount', 0),
+                    'referralEarnings': u.get('referralEarnings', 0)
+                }
+            })
     
-    return jsonify({'success': False, 'error': 'لم يتم العثور على جلسة سابقة'})
+    return jsonify({'success': False})
 
 @app.route('/api/auth/me')
 @verify_token
@@ -757,9 +659,8 @@ def buy():
     balance = request.user.get('balance', 0)
     
     if balance < price:
-        return jsonify({'success': False, 'error': f'رصيدك غير كافٍ. السعر: ${price}'})
+        return jsonify({'success': False, 'error': f'رصيدك غير كافٍ (${balance:.2f})'})
     
-    # Find available number
     numbers = fb_get('numbers') or {}
     target = None
     target_id = None
@@ -771,13 +672,11 @@ def buy():
             break
     
     if not target:
-        return jsonify({'success': False, 'error': 'لا توجد أرقام متاحة لهذه الدولة'})
+        return jsonify({'success': False, 'error': 'لا توجد أرقام متاحة'})
     
-    # Deduct balance
     new_balance = balance - price
     fb_update(f'users/{request.user_id}', {'balance': new_balance})
     
-    # Create purchase
     purchase_id = fb_push('purchases', {
         'userId': request.user_id,
         'numberId': target_id,
@@ -789,7 +688,6 @@ def buy():
         'createdAt': datetime.now().isoformat()
     })
     
-    # Mark number as sold
     fb_update(f'numbers/{target_id}', {
         'status': 'sold',
         'soldTo': request.user_id,
@@ -905,17 +803,13 @@ def sell_verify():
         
         if not success:
             if msg == "2FA_REQUIRED":
-                return jsonify({
-                    'success': False,
-                    'error': '2FA_REQUIRED',
-                    'message': 'الرقم محمي بكلمة مرور'
-                })
+                return jsonify({'success': False, 'error': '2FA_REQUIRED'})
             return jsonify({'success': False, 'error': msg})
         
         countries = get_countries()
         price = countries[country]['sell']
         
-        # Create sell request
+        # إنشاء طلب بيع
         fb_push('sell_requests', {
             'userId': request.user_id,
             'username': request.user.get('username'),
@@ -941,17 +835,14 @@ def deposit():
     if not txid.startswith('0x') or len(txid) < 60:
         return jsonify({'success': False, 'error': 'TXID غير صحيح'})
     
-    # Check if already used
     deposits = fb_get('deposits') or {}
     for d in deposits.values():
         if d and d.get('txid') == txid:
-            return jsonify({'success': False, 'error': 'هذه المعاملة مستخدمة سابقاً'})
+            return jsonify({'success': False, 'error': 'المعاملة مستخدمة'})
     
-    # Verify transaction
     valid, amount, msg = verify_bsc_tx(txid)
     
     if valid:
-        # Auto approve
         fb_push('deposits', {
             'userId': request.user_id,
             'txid': txid,
@@ -966,11 +857,10 @@ def deposit():
         return jsonify({
             'success': True,
             'amount': amount,
-            'newBalance': new_balance,
-            'message': f'تم إيداع ${amount:.2f} بنجاح'
+            'newBalance': new_balance
         })
     else:
-        # Save for manual review
+        # حفظ للمراجعة اليدوية
         fb_push('pending_deposits', {
             'userId': request.user_id,
             'username': request.user.get('username'),
@@ -983,43 +873,8 @@ def deposit():
         return jsonify({
             'success': False,
             'error': 'manual_review',
-            'message': 'لم نتمكن من التحقق تلقائياً. سيتم مراجعة إيداعك وإضافة الرصيد من الإدارة خلال دقائق.'
+            'message': 'سيتم مراجعة إيداعك وإضافة الرصيد قريباً'
         })
-
-@app.route('/api/deposit/manual', methods=['POST'])
-@verify_token
-def deposit_manual():
-    data = request.json or {}
-    txid = data.get('txid', '').strip()
-    
-    if not txid.startswith('0x') or len(txid) < 60:
-        return jsonify({'success': False, 'error': 'TXID غير صحيح'})
-    
-    # Check duplicates
-    deposits = fb_get('deposits') or {}
-    pending = fb_get('pending_deposits') or {}
-    
-    for d in deposits.values():
-        if d and d.get('txid') == txid:
-            return jsonify({'success': False, 'error': 'المعاملة مستخدمة سابقاً'})
-    
-    for d in pending.values():
-        if d and d.get('txid') == txid:
-            return jsonify({'success': False, 'error': 'المعاملة قيد المراجعة بالفعل'})
-    
-    # Add to pending
-    fb_push('pending_deposits', {
-        'userId': request.user_id,
-        'username': request.user.get('username'),
-        'txid': txid,
-        'status': 'pending',
-        'createdAt': datetime.now().isoformat()
-    })
-    
-    return jsonify({
-        'success': True,
-        'message': 'تم إرسال طلب الإيداع للمراجعة'
-    })
 
 # ============== Withdraw ==============
 @app.route('/api/withdraw', methods=['POST'])
@@ -1029,18 +884,15 @@ def withdraw():
     amount = float(data.get('amount', 0))
     address = data.get('address', '').strip()
     
-    settings = get_settings()
-    min_w = settings.get('minWithdrawal', 3.0)
-    
-    if amount < min_w:
-        return jsonify({'success': False, 'error': f'الحد الأدنى للسحب ${min_w}'})
+    if amount < 3:
+        return jsonify({'success': False, 'error': 'الحد الأدنى $3'})
     
     if not address.startswith('0x') or len(address) != 42:
-        return jsonify({'success': False, 'error': 'عنوان المحفظة غير صحيح'})
+        return jsonify({'success': False, 'error': 'عنوان غير صحيح'})
     
     balance = request.user.get('balance', 0)
     if balance < amount:
-        return jsonify({'success': False, 'error': 'رصيدك غير كافٍ'})
+        return jsonify({'success': False, 'error': 'رصيد غير كافٍ'})
     
     new_balance = balance - amount
     fb_update(f'users/{request.user_id}', {'balance': new_balance})
@@ -1054,20 +906,15 @@ def withdraw():
         'createdAt': datetime.now().isoformat()
     })
     
-    return jsonify({
-        'success': True,
-        'newBalance': new_balance,
-        'message': 'تم إرسال طلب السحب بنجاح'
-    })
+    return jsonify({'success': True, 'newBalance': new_balance})
 
-# ============== Admin Routes ==============
+# ============== Admin ==============
 @app.route('/api/admin/dashboard')
 def admin_dashboard():
     users = fb_get('users') or {}
     numbers = fb_get('numbers') or {}
     sells = fb_get('sell_requests') or {}
     wths = fb_get('withdrawals') or {}
-    deposits = fb_get('deposits') or {}
     pending_deps = fb_get('pending_deposits') or {}
     
     return jsonify({
@@ -1077,10 +924,46 @@ def admin_dashboard():
             'availableNumbers': sum(1 for n in numbers.values() if n and n.get('status') == 'available'),
             'pendingSells': sum(1 for s in sells.values() if s and s.get('status') == 'pending'),
             'pendingWithdrawals': sum(1 for w in wths.values() if w and w.get('status') == 'pending'),
-            'pendingDeposits': sum(1 for d in pending_deps.values() if d and d.get('status') == 'pending'),
-            'totalDepositsVolume': sum(d.get('amount', 0) for d in deposits.values() if d and d.get('status') == 'approved')
+            'pendingDeposits': sum(1 for d in pending_deps.values() if d and d.get('status') == 'pending')
         }
     })
+
+@app.route('/api/admin/users')
+def admin_users():
+    users = fb_get('users') or {}
+    result = []
+    for uid, u in users.items():
+        if u:
+            result.append({
+                'id': uid,
+                'username': u.get('username'),
+                'email': u.get('email'),
+                'balance': u.get('balance', 0),
+                'banned': u.get('banned', False)
+            })
+    return jsonify({'success': True, 'users': result})
+
+@app.route('/api/admin/user/<uid>/ban', methods=['POST'])
+def admin_ban(uid):
+    data = request.json or {}
+    fb_update(f'users/{uid}', {'banned': True, 'banReason': data.get('reason', '')})
+    return jsonify({'success': True})
+
+@app.route('/api/admin/user/<uid>/unban', methods=['POST'])
+def admin_unban(uid):
+    fb_update(f'users/{uid}', {'banned': False, 'banReason': None})
+    return jsonify({'success': True})
+
+@app.route('/api/admin/user/<uid>/add-balance', methods=['POST'])
+def admin_add_balance(uid):
+    data = request.json or {}
+    amount = float(data.get('amount', 0))
+    user = fb_get(f'users/{uid}')
+    if user:
+        new_bal = user.get('balance', 0) + amount
+        fb_update(f'users/{uid}', {'balance': new_bal})
+        return jsonify({'success': True})
+    return jsonify({'success': False})
 
 @app.route('/api/admin/sells')
 def admin_sells():
@@ -1101,7 +984,6 @@ def admin_approve_sell():
     country = sell.get('country')
     buy_price = countries.get(country, {}).get('buy', 1.0)
     
-    # Add number to stock
     fb_push('numbers', {
         'phone': sell['phone'],
         'country': country,
@@ -1111,10 +993,8 @@ def admin_approve_sell():
         'createdAt': datetime.now().isoformat()
     })
     
-    # Update sell request
     fb_update(f'sell_requests/{sell_id}', {'status': 'approved'})
     
-    # Add balance to seller
     user = fb_get(f"users/{sell['userId']}")
     if user:
         new_balance = user.get('balance', 0) + sell['price']
@@ -1125,32 +1005,24 @@ def admin_approve_sell():
 @app.route('/api/admin/reject-sell', methods=['POST'])
 def admin_reject_sell():
     data = request.json or {}
-    sell_id = data.get('id')
-    fb_update(f"sell_requests/{sell_id}", {
-        'status': 'rejected',
-        'reason': data.get('reason', '')
-    })
+    fb_update(f"sell_requests/{data.get('id')}", {'status': 'rejected'})
     return jsonify({'success': True})
 
 @app.route('/api/admin/withdrawals')
 def admin_withdrawals():
     wths = fb_get('withdrawals') or {}
-    result = [{'id': k, **v} for k, v in wths.items() if v]
-    result.sort(key=lambda x: x.get('createdAt', ''), reverse=True)
-    return jsonify({'success': True, 'items': result})
+    items = [{'id': k, **v} for k, v in wths.items() if v]
+    return jsonify({'success': True, 'items': items})
 
 @app.route('/api/admin/approve-withdrawal', methods=['POST'])
 def admin_approve_wth():
     data = request.json or {}
     wid = data.get('id')
-    txid = data.get('txid', '')
-    
     fb_update(f"withdrawals/{wid}", {
         'status': 'approved',
-        'txid': txid,
+        'txid': data.get('txid', ''),
         'approvedAt': datetime.now().isoformat()
     })
-    
     return jsonify({'success': True})
 
 @app.route('/api/admin/reject-withdrawal', methods=['POST'])
@@ -1160,23 +1032,19 @@ def admin_reject_wth():
     
     wth = fb_get(f'withdrawals/{wid}')
     if wth:
-        # Refund balance
         user = fb_get(f"users/{wth['userId']}")
         if user:
-            new_balance = user.get('balance', 0) + wth.get('amount', 0)
-            fb_update(f"users/{wth['userId']}", {'balance': new_balance})
+            fb_update(f"users/{wth['userId']}", {
+                'balance': user.get('balance', 0) + wth.get('amount', 0)
+            })
     
-    fb_update(f"withdrawals/{wid}", {
-        'status': 'rejected',
-        'reason': data.get('reason', '')
-    })
-    
+    fb_update(f"withdrawals/{wid}", {'status': 'rejected'})
     return jsonify({'success': True})
 
 @app.route('/api/admin/pending-deposits')
 def admin_pending_deposits():
-    deposits = fb_get('pending_deposits') or {}
-    items = [{'id': k, **v} for k, v in deposits.items() if v and v.get('status') == 'pending']
+    deps = fb_get('pending_deposits') or {}
+    items = [{'id': k, **v} for k, v in deps.items() if v and v.get('status') == 'pending']
     return jsonify({'success': True, 'items': items})
 
 @app.route('/api/admin/approve-deposit', methods=['POST'])
@@ -1187,9 +1055,8 @@ def admin_approve_deposit():
     
     dep = fb_get(f'pending_deposits/{dep_id}')
     if not dep:
-        return jsonify({'success': False, 'error': 'غير موجود'})
+        return jsonify({'success': False})
     
-    # Add to approved deposits
     fb_push('deposits', {
         'userId': dep['userId'],
         'txid': dep['txid'],
@@ -1198,83 +1065,20 @@ def admin_approve_deposit():
         'approvedAt': datetime.now().isoformat()
     })
     
-    # Update user balance
     user = fb_get(f"users/{dep['userId']}")
     if user:
-        new_balance = user.get('balance', 0) + amount
-        fb_update(f"users/{dep['userId']}", {'balance': new_balance})
+        fb_update(f"users/{dep['userId']}", {
+            'balance': user.get('balance', 0) + amount
+        })
     
-    # Update pending status
-    fb_update(f'pending_deposits/{dep_id}', {
-        'status': 'approved',
-        'amount': amount
-    })
-    
+    fb_update(f'pending_deposits/{dep_id}', {'status': 'approved', 'amount': amount})
     return jsonify({'success': True})
 
 @app.route('/api/admin/reject-deposit', methods=['POST'])
 def admin_reject_deposit():
     data = request.json or {}
-    dep_id = data.get('id')
-    
-    fb_update(f'pending_deposits/{dep_id}', {
-        'status': 'rejected',
-        'reason': data.get('reason', '')
-    })
-    
+    fb_update(f"pending_deposits/{data.get('id')}", {'status': 'rejected'})
     return jsonify({'success': True})
-
-@app.route('/api/admin/users')
-def admin_users():
-    users = fb_get('users') or {}
-    result = []
-    
-    for uid, u in users.items():
-        if u:
-            result.append({
-                'id': uid,
-                'username': u.get('username'),
-                'email': u.get('email'),
-                'balance': u.get('balance', 0),
-                'referralCode': u.get('referralCode'),
-                'referralCount': u.get('referralCount', 0),
-                'banned': u.get('banned', False),
-                'banReason': u.get('banReason', ''),
-                'createdAt': u.get('createdAt')
-            })
-    
-    return jsonify({'success': True, 'users': result})
-
-@app.route('/api/admin/user/<uid>/ban', methods=['POST'])
-def admin_ban(uid):
-    data = request.json or {}
-    fb_update(f'users/{uid}', {
-        'banned': True,
-        'banReason': data.get('reason', 'مخالفة الشروط')
-    })
-    return jsonify({'success': True})
-
-@app.route('/api/admin/user/<uid>/unban', methods=['POST'])
-def admin_unban(uid):
-    fb_update(f'users/{uid}', {
-        'banned': False,
-        'banReason': None
-    })
-    return jsonify({'success': True})
-
-@app.route('/api/admin/user/<uid>/add-balance', methods=['POST'])
-def admin_add_balance(uid):
-    data = request.json or {}
-    amount = float(data.get('amount', 0))
-    
-    user = fb_get(f'users/{uid}')
-    if not user:
-        return jsonify({'success': False, 'error': 'المستخدم غير موجود'})
-    
-    new_balance = user.get('balance', 0) + amount
-    fb_update(f'users/{uid}', {'balance': new_balance})
-    
-    return jsonify({'success': True, 'newBalance': new_balance})
 
 @app.route('/api/admin/numbers')
 def admin_numbers():
@@ -1315,11 +1119,7 @@ def admin_verify_code():
         
         if not success:
             if msg == "2FA_REQUIRED":
-                return jsonify({
-                    'success': False,
-                    'error': '2FA_REQUIRED',
-                    'message': 'الرقم محمي بكلمة مرور'
-                })
+                return jsonify({'success': False, 'error': '2FA_REQUIRED'})
             return jsonify({'success': False, 'error': msg})
         
         countries = get_countries()
@@ -1336,79 +1136,28 @@ def admin_verify_code():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
 
-@app.route('/api/admin/settings')
-def admin_get_settings():
-    return jsonify({'success': True, 'settings': get_settings()})
-
-@app.route('/api/admin/settings', methods=['PATCH'])
-def admin_update_settings():
+@app.route('/api/admin/delete-all', methods=['POST'])
+def admin_delete_all():
     data = request.json or {}
-    fb_update('settings', data)
+    
+    if data.get('confirm') != 'DELETE_ALL_DATA':
+        return jsonify({'success': False, 'error': 'تأكيد غير صحيح'})
+    
+    # حذف جميع البيانات
+    fb_delete('users')
+    fb_delete('numbers')
+    fb_delete('purchases')
+    fb_delete('sell_requests')
+    fb_delete('deposits')
+    fb_delete('pending_deposits')
+    fb_delete('withdrawals')
+    fb_delete('fingerprints')
+    
     return jsonify({'success': True})
 
-@app.route('/api/admin/countries')
-def admin_get_countries():
-    countries = get_countries()
-    result = [{'code': k, **v} for k, v in countries.items()]
-    return jsonify({'success': True, 'countries': result})
-
-@app.route('/api/admin/country', methods=['POST'])
-def admin_add_country():
-    data = request.json or {}
-    code = data.get('code')
-    
-    if not code:
-        return jsonify({'success': False, 'error': 'كود الدولة مطلوب'})
-    
-    countries = get_countries()
-    countries[code] = {
-        'name': data.get('name'),
-        'flag': data.get('flag'),
-        'code': data.get('phoneCode'),
-        'buy': float(data.get('buyPrice', 1)),
-        'sell': float(data.get('sellPrice', 0.5)),
-        'enabled': True
-    }
-    
-    fb_set('countries', countries)
-    return jsonify({'success': True})
-
-@app.route('/api/admin/country/<code>', methods=['PATCH'])
-def admin_update_country(code):
-    data = request.json or {}
-    countries = get_countries()
-    
-    if code in countries:
-        if 'name' in data:
-            countries[code]['name'] = data['name']
-        if 'buyPrice' in data:
-            countries[code]['buy'] = float(data['buyPrice'])
-        if 'sellPrice' in data:
-            countries[code]['sell'] = float(data['sellPrice'])
-        if 'enabled' in data:
-            countries[code]['enabled'] = data['enabled']
-        
-        fb_set('countries', countries)
-        return jsonify({'success': True})
-    
-    return jsonify({'success': False, 'error': 'الدولة غير موجودة'})
-
-@app.route('/api/admin/country/<code>', methods=['DELETE'])
-def admin_delete_country(code):
-    countries = get_countries()
-    
-    if code in countries:
-        del countries[code]
-        fb_set('countries', countries)
-        return jsonify({'success': True})
-    
-    return jsonify({'success': False, 'error': 'الدولة غير موجودة'})
-
-# ============== Error Handler ==============
 @app.errorhandler(Exception)
 def handle_error(e):
     return jsonify({'success': False, 'error': str(e)}), 500
 
-# ============== Run ==============
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
