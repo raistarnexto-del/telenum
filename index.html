@@ -91,19 +91,6 @@
             gap: 6px;
         }
         
-        .header-btn {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            border: 1px solid var(--border);
-            background: var(--bg-input);
-            color: var(--text);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
         /* Navigation */
         .nav {
             position: fixed;
@@ -480,24 +467,43 @@
 
     <section class="section" id="secWallet">
         <div class="section-title"><i class="fas fa-wallet"></i> المحفظة</div>
+        
+        <!-- Deposit Tab -->
         <div class="form-card">
-            <div class="alert alert-w"><i class="fas fa-exclamation-triangle"></i><span>الحد الأدنى للسحب: $3.00</span></div>
+            <h3 style="margin-bottom:10px;"><i class="fas fa-download"></i> إيداع رصيد</h3>
+            <div class="alert alert-w"><i class="fas fa-exclamation-triangle"></i><span>أرسل USDT (BEP-20) إلى المحفظة أدناه. الحد الأدنى 0.1$. <br>ملاحظة: يجب أن يصل المبلغ الصافي (بعد خصم الرسوم).</span></div>
             
             <div class="wallet-box">
-                <span class="wallet-addr" id="walletAddr">0x8E00A980274Cfb22798290586d97F7D185E3092D</span>
-                <button class="copy-btn" onclick="copyWallet()"><i class="fas fa-copy"></i></button>
+                <span class="wallet-addr" id="depositWallet">0x8E00A980274Cfb22798290586d97F7D185E3092D</span>
+                <button class="copy-btn" onclick="copyDeposit()"><i class="fas fa-copy"></i></button>
             </div>
             
-            <hr style="border:0; border-top:1px solid var(--border); margin:20px 0;">
-            
-            <h3 style="margin-bottom:10px;">سحب الرصيد</h3>
+            <form id="depositForm">
+                <div class="form-group">
+                    <label class="form-label">المبلغ الذي أرسلته (شامل الرسوم)</label>
+                    <input type="number" class="form-input" id="depAmount" placeholder="0.00" step="0.01" min="0.1" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">TXID (رقم المعاملة)</label>
+                    <input type="text" class="form-input" id="depTxid" placeholder="0x..." dir="ltr" required>
+                </div>
+                <button type="submit" class="btn btn-success"><i class="fas fa-check-circle"></i> تحقق وإيداع</button>
+            </form>
+        </div>
+
+        <hr style="border:0; border-top:1px solid var(--border); margin:20px 0;">
+
+        <!-- Withdraw Tab -->
+        <div class="form-card">
+            <h3 style="margin-bottom:10px;"><i class="fas fa-upload"></i> سحب الرصيد</h3>
+             <div class="alert alert-i"><i class="fas fa-info-circle"></i><span>أدخل محفظتك الشخصية (BEP-20) لاستلام الأموال.</span></div>
             <form id="withdrawForm">
                 <div class="form-group">
                     <label class="form-label">المبلغ ($)</label>
                     <input type="number" class="form-input" id="withdrawAmount" placeholder="0.00" step="0.01" required>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">عنوان المحفظة (BEP-20)</label>
+                    <label class="form-label">محفظتك للاستلام (BEP-20)</label>
                     <input type="text" class="form-input" id="withdrawAddress" placeholder="0x..." dir="ltr" required>
                 </div>
                 <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane"></i> طلب سحب</button>
@@ -565,10 +571,20 @@ let isAdmin = false;
 let countries = [];
 let pollers = {};
 
+// --- Helper: Device ID ---
+function getDeviceId() {
+    let id = localStorage.getItem('device_id');
+    if (!id) {
+        id = 'dev_' + Math.random().toString(36).substr(2, 16);
+        localStorage.setItem('device_id', id);
+    }
+    return id;
+}
+
 document.addEventListener('DOMContentLoaded', init);
 
 async function init() {
-    await tryAutoLogin(); // محاولة تسجيل دخول تلقائي أولاً
+    await tryAutoLogin(); 
     checkAdmin();
     setupEvents();
     loadUser();
@@ -576,12 +592,16 @@ async function init() {
     await loadStats();
 }
 
-// دالة تسجيل الدخول التلقائي باستخدام البصمة
 async function tryAutoLogin() {
-    if (localStorage.getItem('tg_user')) return; // إذا كان مسجل بالفعل
+    if (localStorage.getItem('tg_user')) return; 
     
+    const deviceId = getDeviceId();
     try {
-        const r = await fetch(`${API}/auth/auto-login`, { method: 'POST' });
+        const r = await fetch(`${API}/auth/auto-login`, { 
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ deviceId }) 
+        });
         const d = await r.json();
         if (d.success) {
             user = d.user;
@@ -632,7 +652,6 @@ function updateUserArea() {
                 <i class="fas fa-coins"></i> $${(user.balance || 0).toFixed(2)}
             </div>
         `;
-        // ملاحظة: تم إزالة زر تسجيل الخروج بناءً على الطلب
     } else {
         area.innerHTML = `<button class="auth-btn" onclick="showSection('auth')"><i class="fas fa-user"></i> دخول</button>`;
     }
@@ -649,6 +668,7 @@ function setupEvents() {
     document.getElementById('regForm').onsubmit = handleRegister;
     document.getElementById('sellForm').onsubmit = handleSell;
     document.getElementById('withdrawForm').onsubmit = handleWithdraw;
+    document.getElementById('depositForm').onsubmit = handleDeposit;
     document.getElementById('sellPhone').oninput = detectSellCountry;
 }
 
@@ -702,6 +722,7 @@ async function loadStats() {
         const d = await r.json();
         document.getElementById('statCountries').textContent = d.totalCountries || 0;
         document.getElementById('statNumbers').textContent = d.availableNumbers || 0;
+        if(d.depositWallet) document.getElementById('depositWallet').textContent = d.depositWallet;
     } catch (e) {}
 }
 
@@ -792,7 +813,11 @@ async function handleLogin(e) {
         const r = await fetch(`${API}/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: document.getElementById('loginEmail').value, password: document.getElementById('loginPass').value })
+            body: JSON.stringify({ 
+                email: document.getElementById('loginEmail').value, 
+                password: document.getElementById('loginPass').value,
+                deviceId: getDeviceId()
+            })
         });
         const d = await r.json();
         if (d.success) {
@@ -815,7 +840,8 @@ async function handleRegister(e) {
                 username: document.getElementById('regName').value,
                 email: document.getElementById('regEmail').value,
                 password: document.getElementById('regPass').value,
-                referralCode: document.getElementById('regReferral').value
+                referralCode: document.getElementById('regReferral').value,
+                deviceId: getDeviceId()
             })
         });
         const d = await r.json();
@@ -903,6 +929,36 @@ async function handleSell(e) {
 }
 
 // Wallet
+async function handleDeposit(e) {
+    e.preventDefault();
+    if (!user) return;
+    
+    const amount = parseFloat(document.getElementById('depAmount').value);
+    const txid = document.getElementById('depTxid').value.trim();
+    const btn = e.target.querySelector('button');
+    
+    if (amount < 0.1) { toast('الحد الأدنى 0.1$', 'error'); return; }
+    
+    btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري التحقق...';
+    
+    try {
+        const r = await fetch(`${API}/deposit`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${user.token}` },
+            body: JSON.stringify({ amount, txid })
+        });
+        const d = await r.json();
+        if (d.success) {
+            user.balance = d.newBalance;
+            localStorage.setItem('tg_user', JSON.stringify(user));
+            updateUserArea();
+            toast(`تم إيداع $${d.amount.toFixed(2)} بنجاح!`, 'success');
+            e.target.reset();
+        } else throw new Error(d.error);
+    } catch (err) { toast(err.message, 'error'); }
+    btn.disabled = false; btn.innerHTML = '<i class="fas fa-check-circle"></i> تحقق وإيداع';
+}
+
 async function handleWithdraw(e) {
     e.preventDefault();
     if (!user) return;
@@ -913,7 +969,7 @@ async function handleWithdraw(e) {
     
     if (amount < 3) { toast('الحد الأدنى $3', 'error'); return; }
     if (amount > user.balance) { toast('رصيد غير كافٍ', 'error'); return; }
-    if (!address.startsWith('0x') || address.length !== 42) { toast('عنوان غير صحيح', 'error'); return; }
+    if (!address.startsWith('0x') || address.length !== 42) { toast('عنوان محفظتك غير صحيح', 'error'); return; }
     
     btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
     
@@ -935,9 +991,9 @@ async function handleWithdraw(e) {
     btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane"></i> طلب سحب';
 }
 
-function copyWallet() {
-    navigator.clipboard.writeText('0x8E00A980274Cfb22798290586d97F7D185E3092D');
-    toast('تم النسخ', 'success');
+function copyDeposit() {
+    navigator.clipboard.writeText(document.getElementById('depositWallet').textContent);
+    toast('تم نسخ محفظة الإيداع', 'success');
 }
 
 // Profile & Numbers
@@ -954,10 +1010,43 @@ async function loadMyNumbers() {
                         <div><b style="font-family:monospace; font-size:1.1rem;">${n.phone}</b><br><small style="color:var(--text-secondary)">${n.country}</small></div>
                         <span style="background:var(--primary-light); color:var(--primary); padding:4px 8px; border-radius:10px; font-size:0.8rem;">${n.status}</span>
                     </div>
+                     ${n.status === 'active' ? `
+                        <div id="nm${n.id}" style="background:var(--bg-input); border-radius:8px; padding:8px; margin-top:10px; font-size:0.85rem;"><i class="fas fa-spinner fa-spin"></i></div>
+                        <button class="btn btn-success btn-sm" style="margin-top:8px;" onclick="pollAgain('${n.id}')"><i class="fas fa-sync"></i> تحديث الأكواد</button>
+                    ` : ''}
                 </div>
             `).join('');
+             // Initial poll for active
+             d.numbers.filter(n => n.status === 'active').forEach(n => pollNumber(n.id));
         } else list.innerHTML = '<div class="alert alert-i">لا أرقام</div>';
     } catch (e) { list.innerHTML = '<div class="alert alert-i">خطأ</div>'; }
+}
+
+function pollNumber(pid) {
+     const poll = async () => {
+        const box = document.getElementById('nm' + pid);
+        if (!box) return;
+        try {
+            const r = await fetch(`${API}/messages/${pid}`, { headers: { 'Authorization': `Bearer ${user.token}` } });
+            const d = await r.json();
+            if (d.messages?.length) {
+                box.innerHTML = d.messages.map(m => `<div style="padding:5px; border-bottom:1px solid var(--border);"><b>Code:</b> ${m.code}</div>`).join('');
+            } else {
+                 box.innerHTML = '<p style="text-align:center; color:var(--text-secondary);">في انتظار الكود...</p>';
+            }
+        } catch(e) {}
+    };
+    poll();
+    // Set interval for live updates
+    if(pollers['n'+pid]) clearInterval(pollers['n'+pid]);
+    pollers['n'+pid] = setInterval(poll, 4000);
+}
+
+function pollAgain(pid) {
+    const box = document.getElementById('nm' + pid);
+    if(box) box.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    pollNumber(pid);
+    toast('جاري البحث عن أكواد جديدة...', 'success');
 }
 
 async function loadProfile() {
@@ -1000,6 +1089,7 @@ async function loadAdminDashboard() {
         <button class="admin-tab" data-tab="wths">السحوبات</button>
         <button class="admin-tab" data-tab="users">المستخدمين</button>
         <button class="admin-tab" data-tab="nums">الأرقام</button>
+        <button class="admin-tab" data-tab="countries">الدول</button>
         <button class="admin-tab" data-tab="add">إضافة رقم</button>
         <button class="admin-tab" data-tab="settings">الإعدادات</button>
     `;
@@ -1069,6 +1159,25 @@ async function loadAdminTab(tab) {
                     </div>
                 </div>
             `).join('') : '<div class="alert alert-i">لا أرقام</div>';
+        } else if (tab === 'countries') {
+             const r = await fetch(`${API}/admin/countries?admin=true`);
+             const d = await r.json();
+             c.innerHTML = `
+                <div style="max-height:400px; overflow-y:auto;">
+                    ${d.countries?.map(co => `
+                        <div class="form-card" style="padding:10px; margin-bottom:8px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <div><b>${co.name}</b> (${co.code})</div>
+                                <div style="display:flex; gap:5px;">
+                                    <input type="number" placeholder="سعر شراء" value="${co.buy}" style="width:70px; padding:5px;" id="buy_${co.code}">
+                                    <input type="number" placeholder="سعر بيع" value="${co.sell}" style="width:70px; padding:5px;" id="sell_${co.code}">
+                                    <button class="btn btn-primary btn-sm" onclick="updCountry('${co.code}')"><i class="fas fa-save"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+             `;
         } else if (tab === 'add') {
             c.innerHTML = `
                 <div class="form-card">
@@ -1087,6 +1196,7 @@ async function loadAdminTab(tab) {
             const s = d.settings || {};
             c.innerHTML = `
                 <div class="form-card">
+                    <h3>إعدادات النظام</h3><br>
                     <div class="form-group">
                         <label class="form-label">مكافأة الإحالة ($)</label>
                         <input type="number" class="form-input" id="setRef" value="${s.referralBonus || 0.15}" step="0.01">
@@ -1094,6 +1204,17 @@ async function loadAdminTab(tab) {
                      <div class="form-group">
                         <label class="form-label">الحد الأدنى للسحب ($)</label>
                         <input type="number" class="form-input" id="setMinW" value="${s.minWithdrawal || 3}" step="0.1">
+                    </div>
+                    <div class="form-group" style="display:flex; justify-content:space-between; align-items:center;">
+                        <label class="form-label">الوضع الوهمي (إظهار أرقام كثيرة)</label>
+                        <label class="toggle">
+                            <input type="checkbox" id="setFakeMode" ${s.fakeMode ? 'checked' : ''}>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                     <div class="form-group">
+                        <label class="form-label">عدد الأرقام الوهمي (عند التفعيل)</label>
+                        <input type="number" class="form-input" id="setFakeCount" value="${s.fakeStockCount || 4713}">
                     </div>
                     <button class="btn btn-primary" onclick="saveSettings()">حفظ</button>
                 </div>
@@ -1137,9 +1258,26 @@ async function handleAddNum(e) {
 }
 
 async function saveSettings() {
-    const d = { referralBonus: parseFloat(document.getElementById('setRef').value), minWithdrawal: parseFloat(document.getElementById('setMinW').value) };
+    const d = { 
+        referralBonus: parseFloat(document.getElementById('setRef').value), 
+        minWithdrawal: parseFloat(document.getElementById('setMinW').value),
+        fakeMode: document.getElementById('setFakeMode').checked,
+        fakeStockCount: parseInt(document.getElementById('setFakeCount').value)
+    };
     await fetch(`${API}/admin/settings?admin=true`, { method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(d) });
     toast('تم الحفظ', 'success');
+    loadStats();
+}
+
+async function updCountry(code) {
+    const buy = parseFloat(document.getElementById(`buy_${code}`).value);
+    const sell = parseFloat(document.getElementById(`sell_${code}`).value);
+    await fetch(`${API}/admin/country/${code}?admin=true`, { 
+        method: 'PATCH', 
+        headers: {'Content-Type': 'application/json'}, 
+        body: JSON.stringify({ buyPrice: buy, sellPrice: sell }) 
+    });
+    toast('تم تحديث ' + code, 'success');
 }
 
 // Admin Actions Helpers
