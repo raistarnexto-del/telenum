@@ -325,7 +325,7 @@ def get_index_html():
         with open('index.html', 'r', encoding='utf-8') as f:
             return f.read()
     except:
-        return "<h1>Error</h1>"
+        return "<h1>Error loading page</h1>"
 
 # ============== Routes ==============
 @app.route('/')
@@ -586,7 +586,7 @@ def sell_send():
 def sell_verify():
     data = request.json or {}
     phone = data.get('phone', '').strip()
-    code = data.get('code', '').strip()
+    code = data.get('code', '').trim() if data.get('code') else ''
     password = data.get('password')
     if not phone or not code:
         return jsonify({'success': False, 'error': 'بيانات ناقصة'})
