@@ -2,7 +2,10 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#0088cc">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>TeleNum - منصة أرقام تيليجرام</title>
     
     <!-- Google Fonts -->
@@ -17,20 +20,27 @@
             --primary: #0088cc;
             --primary-dark: #006699;
             --primary-light: #33a3d9;
+            --primary-rgb: 0, 136, 204;
             --secondary: #28a745;
             --danger: #dc3545;
             --warning: #ffc107;
             --dark: #1a1a2e;
-            --darker: #16213e;
-            --light: #f8f9fa;
+            --darker: #0f0f1a;
+            --light: #f5f7fa;
             --gray: #6c757d;
             --gray-light: #e9ecef;
+            --gray-dark: #495057;
             --white: #ffffff;
-            --shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            --shadow-lg: 0 5px 20px rgba(0, 0, 0, 0.15);
+            --shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
             --radius: 12px;
-            --radius-lg: 20px;
-            --transition: all 0.3s ease;
+            --radius-sm: 8px;
+            --radius-lg: 16px;
+            --radius-xl: 24px;
+            --transition: all 0.2s ease;
+            --safe-top: env(safe-area-inset-top);
+            --safe-bottom: env(safe-area-inset-bottom);
         }
 
         /* ==================== RESET & BASE ==================== */
@@ -38,16 +48,29 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+        }
+
+        html {
+            font-size: 16px;
+            -webkit-text-size-adjust: 100%;
         }
 
         body {
-            font-family: 'Tajawal', sans-serif;
+            font-family: 'Tajawal', -apple-system, BlinkMacSystemFont, sans-serif;
             background: var(--light);
             color: var(--dark);
             min-height: 100vh;
-          /* الكود الأساسي لجعل لون التحديد شفافاً */
--webkit-tap-highlight-color: transparent;
+            min-height: -webkit-fill-available;
+            overflow-x: hidden;
+                        line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
 
+        html, body {
+            height: 100%;
             overflow-x: hidden;
         }
 
@@ -61,11 +84,36 @@
             cursor: pointer;
             border: none;
             outline: none;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        input, textarea {
+        input, textarea, select {
             font-family: inherit;
             outline: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+        }
+
+        img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* ==================== SCROLLBAR ==================== */
+        ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--gray-light);
+            border-radius: 4px;
         }
 
         /* ==================== LOADING SCREEN ==================== */
@@ -75,41 +123,46 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             z-index: 9999;
-            transition: opacity 0.5s ease;
+            transition: opacity 0.4s ease, visibility 0.4s ease;
         }
 
         .loading-screen.hidden {
             opacity: 0;
-            pointer-events: none;
+            visibility: hidden;
         }
 
         .loading-logo {
-            font-size: 3rem;
+            font-size: 2.5rem;
             font-weight: 800;
             color: var(--white);
             margin-bottom: 30px;
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 12px;
         }
 
         .loading-logo i {
-            font-size: 2.5rem;
+            font-size: 2.2rem;
         }
 
         .spinner {
-            width: 50px;
-            height: 50px;
-            border: 4px solid rgba(255, 255, 255, 0.3);
+            width: 45px;
+            height: 45px;
+            border: 3px solid rgba(255, 255, 255, 0.2);
             border-top-color: var(--white);
             border-radius: 50%;
-            animation: spin 1s linear infinite;
+            animation: spin 0.8s linear infinite;
+        }
+
+        .spinner-dark {
+            border-color: var(--gray-light);
+            border-top-color: var(--primary);
         }
 
         @keyframes spin {
@@ -120,30 +173,48 @@
         .auth-screen {
             min-height: 100vh;
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            display: flex;
+            display: none;
             align-items: center;
             justify-content: center;
             padding: 20px;
+            padding-top: calc(20px + var(--safe-top));
+            padding-bottom: calc(20px + var(--safe-bottom));
+        }
+
+        .auth-screen.active {
+            display: flex;
         }
 
         .auth-card {
             background: var(--white);
-            border-radius: var(--radius-lg);
+            border-radius: var(--radius-xl);
             box-shadow: var(--shadow-lg);
             width: 100%;
-            max-width: 400px;
+            max-width: 380px;
             overflow: hidden;
+            animation: slideUp 0.4s ease;
+        }
+
+        @keyframes slideUp {
+            from { 
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to { 
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .auth-header {
             background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            padding: 30px;
+            padding: 28px 24px;
             text-align: center;
             color: var(--white);
         }
 
         .auth-header h1 {
-            font-size: 2rem;
+            font-size: 1.8rem;
             font-weight: 800;
             display: flex;
             align-items: center;
@@ -152,8 +223,9 @@
         }
 
         .auth-header p {
-            margin-top: 10px;
+            margin-top: 8px;
             opacity: 0.9;
+            font-size: 0.95rem;
         }
 
         .auth-tabs {
@@ -163,12 +235,14 @@
 
         .auth-tab {
             flex: 1;
-            padding: 15px;
+            padding: 14px;
             text-align: center;
             font-weight: 600;
+            font-size: 0.95rem;
             color: var(--gray);
             background: transparent;
             transition: var(--transition);
+            position: relative;
         }
 
         .auth-tab.active {
@@ -176,23 +250,42 @@
             color: var(--primary);
         }
 
+        .auth-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 3px;
+            background: var(--primary);
+            border-radius: 3px 3px 0 0;
+        }
+
         .auth-form {
-            padding: 30px;
+            padding: 24px;
             display: none;
         }
 
         .auth-form.active {
             display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
 
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 18px;
         }
 
         .form-group label {
             display: block;
             margin-bottom: 8px;
-            font-weight: 500;
+            font-weight: 600;
+            font-size: 0.9rem;
             color: var(--dark);
         }
 
@@ -203,10 +296,16 @@
             border-radius: var(--radius);
             font-size: 1rem;
             transition: var(--transition);
+            background: var(--white);
         }
 
         .form-group input:focus {
             border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.1);
+        }
+
+        .form-group input::placeholder {
+            color: var(--gray);
         }
 
         .btn {
@@ -214,11 +313,14 @@
             align-items: center;
             justify-content: center;
             gap: 8px;
-            padding: 14px 28px;
+            padding: 14px 24px;
             border-radius: var(--radius);
             font-size: 1rem;
             font-weight: 600;
             transition: var(--transition);
+            cursor: pointer;
+            border: none;
+            min-height: 48px;
         }
 
         .btn-primary {
@@ -229,7 +331,10 @@
 
         .btn-primary:hover {
             background: var(--primary-dark);
-            transform: translateY(-2px);
+        }
+
+        .btn-primary:active {
+            transform: scale(0.98);
         }
 
         .btn-success {
@@ -237,45 +342,66 @@
             color: var(--white);
         }
 
+        .btn-success:hover {
+            background: #218838;
+        }
+
         .btn-danger {
             background: var(--danger);
             color: var(--white);
         }
 
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
         .btn-outline {
             background: transparent;
-            border: 2px solid var(--primary);
+            border: 2px solid var(--gray-light);
+            color: var(--gray-dark);
+        }
+
+        .btn-outline:hover {
+            border-color: var(--primary);
             color: var(--primary);
         }
 
         .btn:disabled {
-            opacity: 0.6;
+            opacity: 0.65;
             cursor: not-allowed;
+            transform: none !important;
         }
 
-        .referral-link {
-            text-align: center;
-            margin-top: 15px;
-            color: var(--gray);
+        .btn-sm {
+            padding: 10px 16px;
             font-size: 0.9rem;
+            min-height: 40px;
         }
 
-        .referral-link a {
-            color: var(--primary);
-            font-weight: 600;
+        .btn-icon {
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            border-radius: var(--radius-sm);
         }
 
         /* ==================== MAIN APP ==================== */
         .app-container {
             display: none;
             min-height: 100vh;
-            padding-bottom: 80px;
+            padding-bottom: calc(70px + var(--safe-bottom));
+            background: var(--light);
+        }
+
+        .app-container.active {
+            display: block;
         }
 
         /* Header */
         .app-header {
             background: var(--white);
-            padding: 15px 20px;
+            padding: 12px 16px;
+            padding-top: calc(12px + var(--safe-top));
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -286,7 +412,7 @@
         }
 
         .header-logo {
-            font-size: 1.5rem;
+            font-size: 1.4rem;
             font-weight: 800;
             color: var(--primary);
             display: flex;
@@ -294,187 +420,210 @@
             gap: 8px;
         }
 
+        .header-logo i {
+            font-size: 1.3rem;
+        }
+
         .balance-box {
             background: linear-gradient(135deg, var(--primary), var(--primary-dark));
             color: var(--white);
-            padding: 8px 16px;
+            padding: 8px 14px;
             border-radius: var(--radius);
             display: flex;
             align-items: center;
             gap: 8px;
             cursor: pointer;
             transition: var(--transition);
+            box-shadow: var(--shadow);
         }
 
-        .balance-box:hover {
-            transform: scale(1.05);
+        .balance-box:active {
+            transform: scale(0.97);
+        }
+
+        .balance-box i {
+            font-size: 0.95rem;
         }
 
         .balance-amount {
             font-weight: 700;
-            font-size: 1.1rem;
+            font-size: 1rem;
         }
 
         /* Pages */
         .page {
             display: none;
-            padding: 20px;
-            animation: fadeIn 0.3s ease;
+            padding: 16px;
+            min-height: calc(100vh - 130px);
         }
 
         .page.active {
             display: block;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            animation: fadeIn 0.25s ease;
         }
 
         /* Stats Cards */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-            margin-bottom: 25px;
+            gap: 12px;
+            margin-bottom: 20px;
         }
 
         .stat-card {
             background: var(--white);
             border-radius: var(--radius);
-            padding: 20px;
+            padding: 16px;
             text-align: center;
             box-shadow: var(--shadow);
         }
-                .stat-card i {
-            font-size: 2rem;
+
+        .stat-card i {
+            font-size: 1.6rem;
             color: var(--primary);
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
 
         .stat-card .stat-value {
-            font-size: 1.8rem;
+            font-size: 1.6rem;
             font-weight: 800;
             color: var(--dark);
         }
 
         .stat-card .stat-label {
             color: var(--gray);
-            font-size: 0.9rem;
-            margin-top: 5px;
+            font-size: 0.85rem;
+            margin-top: 4px;
         }
 
         /* Action Buttons */
         .action-buttons {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-            margin-bottom: 25px;
+            gap: 12px;
+            margin-bottom: 24px;
         }
 
         .action-btn {
             background: var(--white);
             border-radius: var(--radius);
-            padding: 25px 20px;
+            padding: 20px 16px;
             text-align: center;
             box-shadow: var(--shadow);
             transition: var(--transition);
             cursor: pointer;
+            border: 2px solid transparent;
         }
 
-        .action-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: var(--shadow-lg);
+        .action-btn:active {
+            transform: scale(0.97);
         }
 
         .action-btn.buy {
-            border: 2px solid var(--secondary);
+            border-color: rgba(40, 167, 69, 0.3);
         }
 
         .action-btn.buy i {
             color: var(--secondary);
         }
 
+        .action-btn.buy:active {
+            background: rgba(40, 167, 69, 0.05);
+        }
+
         .action-btn.sell {
-            border: 2px solid var(--primary);
+            border-color: rgba(0, 136, 204, 0.3);
         }
 
         .action-btn.sell i {
             color: var(--primary);
         }
 
+        .action-btn.sell:active {
+            background: rgba(0, 136, 204, 0.05);
+        }
+
         .action-btn i {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
+            font-size: 2rem;
+            margin-bottom: 8px;
+            display: block;
         }
 
         .action-btn span {
-            display: block;
-            font-size: 1.1rem;
+            font-size: 1rem;
             font-weight: 700;
             color: var(--dark);
         }
 
         /* Section Title */
         .section-title {
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             font-weight: 700;
             color: var(--dark);
-            margin-bottom: 15px;
+            margin-bottom: 14px;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
         }
 
         .section-title i {
             color: var(--primary);
+            font-size: 1rem;
         }
 
         /* Search Box */
         .search-box {
             background: var(--white);
             border-radius: var(--radius);
-            padding: 12px 16px;
+            padding: 12px 14px;
             display: flex;
             align-items: center;
             gap: 10px;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
             box-shadow: var(--shadow);
         }
 
         .search-box i {
             color: var(--gray);
+            font-size: 1rem;
         }
 
         .search-box input {
             flex: 1;
             border: none;
-            font-size: 1rem;
+            font-size: 0.95rem;
             background: transparent;
+            min-width: 0;
+        }
+
+        .search-box input::placeholder {
+            color: var(--gray);
         }
 
         /* Countries List */
         .countries-list {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 10px;
         }
 
         .country-card {
             background: var(--white);
             border-radius: var(--radius);
-            padding: 15px;
+            padding: 14px;
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 12px;
             box-shadow: var(--shadow);
             cursor: pointer;
             transition: var(--transition);
+            position: relative;
+            overflow: hidden;
         }
 
-        .country-card:hover {
-            transform: translateX(-5px);
-            box-shadow: var(--shadow-lg);
+        .country-card:active {
+            transform: scale(0.98);
+            background: var(--gray-light);
         }
 
         .country-card.disabled {
@@ -483,44 +632,53 @@
         }
 
         .country-flag {
-            width: 50px;
-            height: 35px;
-            border-radius: 6px;
+            width: 44px;
+            height: 30px;
+            border-radius: 4px;
             object-fit: cover;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            flex-shrink: 0;
         }
 
         .country-info {
             flex: 1;
+            min-width: 0;
         }
 
         .country-name {
             font-weight: 700;
             color: var(--dark);
-            font-size: 1.05rem;
+            font-size: 0.95rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .country-phone {
             color: var(--gray);
-            font-size: 0.9rem;
+            font-size: 0.85rem;
+            direction: ltr;
+            text-align: right;
         }
 
         .country-meta {
             text-align: left;
+            flex-shrink: 0;
         }
 
         .country-price {
             font-weight: 800;
             color: var(--primary);
-            font-size: 1.1rem;
+            font-size: 1rem;
         }
 
         .country-stock {
-            font-size: 0.85rem;
-            padding: 3px 10px;
-            border-radius: 20px;
-            margin-top: 5px;
+            font-size: 0.75rem;
+            padding: 2px 8px;
+            border-radius: 12px;
+            margin-top: 4px;
             display: inline-block;
+            font-weight: 600;
         }
 
         .country-stock.high {
@@ -529,8 +687,8 @@
         }
 
         .country-stock.medium {
-            background: rgba(255, 193, 7, 0.1);
-            color: #e6a800;
+            background: rgba(255, 193, 7, 0.15);
+            color: #d39e00;
         }
 
         .country-stock.low {
@@ -543,78 +701,78 @@
             color: var(--gray);
         }
 
-        /* Featured Badge */
         .featured-badge {
             position: absolute;
-            top: -5px;
-            right: -5px;
-            background: var(--warning);
-            color: var(--dark);
-            font-size: 0.7rem;
-            padding: 2px 8px;
-            border-radius: 10px;
+            top: 8px;
+            left: 8px;
+            background: linear-gradient(135deg, #ffc107, #ff9800);
+            color: #000;
+            font-size: 0.65rem;
+            padding: 2px 6px;
+            border-radius: 8px;
             font-weight: 700;
-        }
-
-        .country-card-wrapper {
-            position: relative;
         }
 
         /* ==================== SELL PAGE ==================== */
         .sell-warning {
-            background: rgba(255, 193, 7, 0.15);
-            border: 1px solid var(--warning);
+            background: rgba(255, 193, 7, 0.12);
+            border: 1px solid rgba(255, 193, 7, 0.4);
             border-radius: var(--radius);
-            padding: 15px;
+            padding: 14px;
             margin-bottom: 20px;
             display: flex;
             gap: 12px;
         }
 
         .sell-warning i {
-            color: var(--warning);
-            font-size: 1.5rem;
-        }
-
-        .sell-warning-text {
-            flex: 1;
+            color: #d39e00;
+            font-size: 1.3rem;
+            flex-shrink: 0;
         }
 
         .sell-warning-text h4 {
             color: #856404;
-            margin-bottom: 5px;
+            margin-bottom: 4px;
+            font-size: 0.95rem;
         }
 
         .sell-warning-text p {
             color: #856404;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
+            line-height: 1.5;
         }
 
         .sell-form {
             background: var(--white);
             border-radius: var(--radius);
-            padding: 25px;
+            padding: 20px;
             box-shadow: var(--shadow);
         }
 
         .phone-input-group {
             display: flex;
             gap: 10px;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
         }
 
         .phone-input-group input {
             flex: 1;
-            padding: 14px 16px;
+            padding: 14px;
             border: 2px solid var(--gray-light);
             border-radius: var(--radius);
-            font-size: 1.1rem;
+            font-size: 1rem;
             direction: ltr;
             text-align: left;
+            min-width: 0;
         }
 
         .phone-input-group input:focus {
             border-color: var(--primary);
+        }
+
+        .phone-input-group .btn {
+            flex-shrink: 0;
+            white-space: nowrap;
         }
 
         .otp-section, .password-section {
@@ -629,62 +787,73 @@
             animation: fadeIn 0.3s ease;
         }
 
+        .otp-label {
+            text-align: center;
+            margin-bottom: 16px;
+            color: var(--dark);
+            font-weight: 600;
+        }
+
         .otp-input {
             display: flex;
             justify-content: center;
-            gap: 10px;
-            margin: 20px 0;
+            gap: 8px;
+            margin-bottom: 20px;
         }
 
         .otp-input input {
-            width: 50px;
-            height: 60px;
+            width: 48px;
+            height: 56px;
             text-align: center;
-            font-size: 1.5rem;
+            font-size: 1.4rem;
             font-weight: 700;
             border: 2px solid var(--gray-light);
             border-radius: var(--radius);
             transition: var(--transition);
+            padding: 0;
         }
 
         .otp-input input:focus {
             border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.1);
         }
 
         /* ==================== MY NUMBERS PAGE ==================== */
         .numbers-list {
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 12px;
         }
 
         .number-card {
             background: var(--white);
             border-radius: var(--radius);
-            padding: 20px;
+            padding: 16px;
             box-shadow: var(--shadow);
         }
 
         .number-card-header {
             display: flex;
             align-items: center;
-            gap: 15px;
-            margin-bottom: 15px;
+            gap: 12px;
+            margin-bottom: 14px;
         }
 
         .number-card-header img {
-            width: 45px;
-            height: 32px;
-            border-radius: 5px;
+            width: 40px;
+            height: 28px;
+            border-radius: 4px;
             object-fit: cover;
+            flex-shrink: 0;
         }
 
         .number-card-info {
             flex: 1;
+            min-width: 0;
         }
 
         .number-card-phone {
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             font-weight: 700;
             color: var(--dark);
             direction: ltr;
@@ -693,14 +862,15 @@
 
         .number-card-country {
             color: var(--gray);
-            font-size: 0.9rem;
+            font-size: 0.85rem;
         }
 
         .number-status {
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 0.85rem;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.8rem;
             font-weight: 600;
+            flex-shrink: 0;
         }
 
         .number-status.active {
@@ -715,63 +885,68 @@
 
         .number-card-actions {
             display: flex;
-            gap: 10px;
+            gap: 8px;
         }
 
         .number-card-actions .btn {
             flex: 1;
-            padding: 12px;
+            padding: 10px 12px;
+            font-size: 0.9rem;
         }
 
         /* ==================== WALLET PAGE ==================== */
         .wallet-balance-card {
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
             border-radius: var(--radius-lg);
-            padding: 30px;
+            padding: 24px;
             color: var(--white);
             text-align: center;
-            margin-bottom: 25px;
-            box-shadow: var(--shadow-lg);
+            margin-bottom: 20px;
+            box-shadow: var(--shadow-md);
         }
 
         .wallet-balance-label {
-            font-size: 1rem;
+            font-size: 0.95rem;
             opacity: 0.9;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
 
         .wallet-balance-amount {
-            font-size: 3rem;
+            font-size: 2.5rem;
             font-weight: 800;
+            line-height: 1.2;
         }
 
         .wallet-balance-amount span {
-            font-size: 1.5rem;
+            font-size: 1.2rem;
+            opacity: 0.9;
         }
 
         .wallet-actions {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-            margin-bottom: 30px;
+            gap: 12px;
+            margin-bottom: 24px;
         }
 
         .wallet-action-btn {
             background: var(--white);
             border-radius: var(--radius);
-            padding: 20px;
+            padding: 18px 14px;
             text-align: center;
             box-shadow: var(--shadow);
             transition: var(--transition);
+            cursor: pointer;
         }
 
-        .wallet-action-btn:hover {
-            transform: translateY(-3px);
+        .wallet-action-btn:active {
+            transform: scale(0.97);
         }
 
         .wallet-action-btn i {
-            font-size: 2rem;
-            margin-bottom: 10px;
+            font-size: 1.6rem;
+            margin-bottom: 8px;
+            display: block;
         }
 
         .wallet-action-btn.deposit i {
@@ -783,150 +958,180 @@
         }
 
         .wallet-action-btn span {
-            display: block;
             font-weight: 700;
             color: var(--dark);
+            font-size: 0.95rem;
         }
 
         /* Referral Section */
         .referral-section {
             background: var(--white);
             border-radius: var(--radius);
-            padding: 25px;
+            padding: 20px;
             box-shadow: var(--shadow);
         }
 
         .referral-code-box {
-            background: var(--gray-light);
+            background: var(--light);
             border-radius: var(--radius);
-            padding: 15px;
+            padding: 14px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin: 15px 0;
+            margin: 14px 0;
+            gap: 10px;
         }
 
         .referral-code {
-            font-size: 1.3rem;
+            font-size: 1.2rem;
             font-weight: 800;
             color: var(--primary);
-            letter-spacing: 2px;
+            letter-spacing: 1px;
         }
 
         .copy-btn {
             background: var(--primary);
             color: var(--white);
             border: none;
-            padding: 8px 15px;
-            border-radius: 8px;
+            padding: 8px 14px;
+            border-radius: var(--radius-sm);
             cursor: pointer;
             transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
         }
 
-        .copy-btn:hover {
-            background: var(--primary-dark);
+        .copy-btn:active {
+            transform: scale(0.95);
         }
 
         .referral-stats {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-            margin-top: 20px;
+            gap: 12px;
+            margin-top: 16px;
         }
 
         .referral-stat {
             text-align: center;
-            padding: 15px;
-            background: var(--gray-light);
+            padding: 14px;
+            background: var(--light);
             border-radius: var(--radius);
         }
 
         .referral-stat-value {
-            font-size: 1.5rem;
+            font-size: 1.4rem;
             font-weight: 800;
             color: var(--primary);
         }
 
         .referral-stat-label {
             color: var(--gray);
-            font-size: 0.9rem;
+            font-size: 0.85rem;
+            margin-top: 4px;
         }
 
         /* ==================== SETTINGS PAGE ==================== */
         .settings-section {
             background: var(--white);
             border-radius: var(--radius);
-            padding: 20px;
-            margin-bottom: 15px;
+            padding: 6px 0;
+            margin-bottom: 14px;
             box-shadow: var(--shadow);
+            overflow: hidden;
         }
 
         .settings-item {
             display: flex;
             align-items: center;
-            padding: 15px 0;
-            border-bottom: 1px solid var(--gray-light);
+            padding: 14px 16px;
+            transition: var(--transition);
         }
 
-        .settings-item:last-child {
-            border-bottom: none;
+        .settings-item:active {
+            background: var(--light);
+        }
+
+        .settings-item + .settings-item {
+            border-top: 1px solid var(--gray-light);
         }
 
         .settings-item i {
-            width: 40px;
-            height: 40px;
-            background: var(--gray-light);
-            border-radius: 10px;
+            width: 36px;
+            height: 36px;
+            background: var(--light);
+            border-radius: var(--radius-sm);
             display: flex;
             align-items: center;
             justify-content: center;
             color: var(--primary);
-            margin-left: 15px;
+            margin-left: 12px;
+            font-size: 0.95rem;
+            flex-shrink: 0;
         }
 
         .settings-item-info {
             flex: 1;
+            min-width: 0;
         }
 
         .settings-item-label {
             font-weight: 600;
             color: var(--dark);
+            font-size: 0.95rem;
         }
 
         .settings-item-value {
             color: var(--gray);
-            font-size: 0.9rem;
-        }
-
-        .settings-item-action {
-            color: var(--gray);
+            font-size: 0.85rem;
+            margin-top: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .admin-btn {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: var(--white);
             width: 100%;
-            padding: 15px;
+            padding: 14px;
             border-radius: var(--radius);
-            font-size: 1.1rem;
+            font-size: 1rem;
             font-weight: 700;
-            margin-top: 20px;
+            margin-top: 16px;
             display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: var(--shadow);
         }
 
         .admin-btn.show {
             display: flex;
         }
 
+        .admin-btn:active {
+            transform: scale(0.98);
+        }
+
         .logout-btn {
-            background: var(--danger);
-            color: var(--white);
+            background: var(--white);
+            color: var(--danger);
+            border: 2px solid var(--danger);
             width: 100%;
-            padding: 15px;
+            padding: 14px;
             border-radius: var(--radius);
-            font-size: 1.1rem;
+            font-size: 1rem;
             font-weight: 700;
             margin-top: 10px;
+        }
+
+        .logout-btn:active {
+            background: var(--danger);
+            color: var(--white);
         }
 
         /* ==================== ADMIN PANEL ==================== */
@@ -934,63 +1139,88 @@
             display: none;
         }
 
+        .admin-page.active {
+            display: block;
+        }
+
         .admin-header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: var(--white);
-            padding: 20px;
-            margin: -20px -20px 20px -20px;
+            padding: 20px 16px;
+            margin: -16px -16px 16px -16px;
+            border-radius: 0 0 var(--radius-lg) var(--radius-lg);
         }
 
         .admin-header h1 {
-            font-size: 1.5rem;
+            font-size: 1.3rem;
             display: flex;
             align-items: center;
             gap: 10px;
         }
 
+        .admin-back {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: var(--white);
+            padding: 8px 14px;
+            border-radius: var(--radius-sm);
+            margin-top: 12px;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
         .admin-stats {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-            margin-bottom: 25px;
+            gap: 10px;
+            margin-bottom: 20px;
         }
 
         .admin-stat-card {
             background: var(--white);
             border-radius: var(--radius);
-            padding: 15px;
+            padding: 14px;
             text-align: center;
             box-shadow: var(--shadow);
         }
 
         .admin-stat-card .value {
-            font-size: 1.8rem;
+            font-size: 1.5rem;
             font-weight: 800;
             color: var(--primary);
         }
 
         .admin-stat-card .label {
             color: var(--gray);
-            font-size: 0.85rem;
+            font-size: 0.8rem;
+            margin-top: 4px;
         }
 
         .admin-tabs {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             overflow-x: auto;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
+            padding-bottom: 8px;
+            margin-bottom: 16px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .admin-tabs::-webkit-scrollbar {
+            display: none;
         }
 
         .admin-tab {
             background: var(--white);
             border: none;
-            padding: 10px 20px;
-            border-radius: 25px;
+            padding: 10px 16px;
+            border-radius: 20px;
             font-weight: 600;
+            font-size: 0.85rem;
             color: var(--gray);
             white-space: nowrap;
             transition: var(--transition);
+            box-shadow: var(--shadow);
+            flex-shrink: 0;
         }
 
         .admin-tab.active {
@@ -1004,13 +1234,14 @@
 
         .admin-tab-content.active {
             display: block;
+            animation: fadeIn 0.2s ease;
         }
 
         .admin-card {
             background: var(--white);
             border-radius: var(--radius);
-            padding: 15px;
-            margin-bottom: 12px;
+            padding: 14px;
+            margin-bottom: 10px;
             box-shadow: var(--shadow);
         }
 
@@ -1019,56 +1250,96 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 10px;
+            gap: 10px;
         }
 
         .admin-card-title {
             font-weight: 700;
             color: var(--dark);
+            font-size: 0.95rem;
+            direction: ltr;
+            text-align: right;
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         .admin-card-actions {
             display: flex;
-            gap: 8px;
+            gap: 6px;
+            flex-shrink: 0;
         }
 
         .admin-card-actions .btn {
-            padding: 8px 15px;
-            font-size: 0.85rem;
+            padding: 6px 12px;
+            font-size: 0.8rem;
+            min-height: 34px;
         }
 
         .admin-card-details {
             color: var(--gray);
-            font-size: 0.9rem;
+            font-size: 0.85rem;
         }
 
         .admin-card-details p {
-            margin: 5px 0;
+            margin: 4px 0;
+        }
+
+        .admin-card-details code {
+            font-size: 0.75rem;
+            background: var(--light);
+            padding: 2px 6px;
+            border-radius: 4px;
+            word-break: break-all;
         }
 
         .admin-input-group {
             display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
+            gap: 8px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
         }
 
         .admin-input-group input {
             flex: 1;
+            min-width: 120px;
             padding: 12px;
             border: 2px solid var(--gray-light);
             border-radius: var(--radius);
+            font-size: 0.9rem;
+        }
+
+        .admin-input-group input:focus {
+            border-color: var(--primary);
+        }
+
+        .admin-input-group .btn {
+            flex-shrink: 0;
         }
 
         .danger-zone {
-            background: rgba(220, 53, 69, 0.1);
-            border: 2px solid var(--danger);
+            background: rgba(220, 53, 69, 0.08);
+            border: 2px solid rgba(220, 53, 69, 0.3);
             border-radius: var(--radius);
-            padding: 20px;
-            margin-top: 30px;
+            padding: 16px;
+            margin-top: 24px;
         }
 
         .danger-zone h3 {
             color: var(--danger);
-            margin-bottom: 10px;
+            margin-bottom: 8px;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .danger-zone p {
+            color: var(--gray);
+            font-size: 0.85rem;
+            margin-bottom: 12px;
         }
 
         /* ==================== BOTTOM NAV ==================== */
@@ -1080,8 +1351,9 @@
             background: var(--white);
             display: flex;
             justify-content: space-around;
-            padding: 10px 0;
-            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+            padding: 8px 0;
+            padding-bottom: calc(8px + var(--safe-bottom));
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.08);
             z-index: 100;
         }
 
@@ -1089,10 +1361,11 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 8px 15px;
+            padding: 6px 12px;
             color: var(--gray);
             transition: var(--transition);
             cursor: pointer;
+            min-width: 60px;
         }
 
         .nav-item.active {
@@ -1100,12 +1373,12 @@
         }
 
         .nav-item i {
-            font-size: 1.3rem;
-            margin-bottom: 4px;
+            font-size: 1.25rem;
+            margin-bottom: 3px;
         }
 
         .nav-item span {
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             font-weight: 600;
         }
 
@@ -1118,48 +1391,47 @@
             height: 100%;
             background: rgba(0, 0, 0, 0.5);
             display: none;
-            align-items: center;
+            align-items: flex-end;
             justify-content: center;
             z-index: 1000;
-            padding: 20px;
+            padding: 0;
         }
 
         .modal-overlay.show {
             display: flex;
-            animation: fadeIn 0.3s ease;
+            animation: fadeIn 0.2s ease;
         }
 
         .modal {
             background: var(--white);
-            border-radius: var(--radius-lg);
+            border-radius: var(--radius-xl) var(--radius-xl) 0 0;
             width: 100%;
-            max-width: 400px;
-            max-height: 80vh;
+            max-width: 500px;
+            max-height: 85vh;
             overflow-y: auto;
             animation: slideUp 0.3s ease;
         }
 
-        @keyframes slideUp {
-            from { transform: translateY(50px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-
         .modal-header {
-            padding: 20px;
+            padding: 16px 20px;
             border-bottom: 1px solid var(--gray-light);
             display: flex;
             align-items: center;
             justify-content: space-between;
+            position: sticky;
+            top: 0;
+            background: var(--white);
+            z-index: 1;
         }
 
         .modal-header h3 {
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             color: var(--dark);
         }
 
         .modal-close {
-            width: 35px;
-            height: 35px;
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
             background: var(--gray-light);
             border: none;
@@ -1168,9 +1440,11 @@
             justify-content: center;
             cursor: pointer;
             transition: var(--transition);
+            font-size: 0.9rem;
+            color: var(--gray);
         }
 
-        .modal-close:hover {
+        .modal-close:active {
             background: var(--danger);
             color: var(--white);
         }
@@ -1180,7 +1454,8 @@
         }
 
         .modal-footer {
-            padding: 20px;
+            padding: 16px 20px;
+            padding-bottom: calc(16px + var(--safe-bottom));
             border-top: 1px solid var(--gray-light);
             display: flex;
             gap: 10px;
@@ -1193,33 +1468,40 @@
         /* Buy Confirm Modal */
         .buy-confirm-info {
             text-align: center;
-            padding: 20px 0;
+            padding: 16px 0;
         }
 
         .buy-confirm-flag {
-            width: 80px;
-            height: 55px;
-            border-radius: 10px;
-            margin-bottom: 15px;
+            width: 72px;
+            height: 50px;
+            border-radius: var(--radius-sm);
+            margin: 0 auto 14px;
             box-shadow: var(--shadow);
+            object-fit: cover;
         }
 
         .buy-confirm-country {
-            font-size: 1.3rem;
+            font-size: 1.2rem;
             font-weight: 700;
             color: var(--dark);
-            margin-bottom: 5px;
+            margin-bottom: 4px;
+        }
+
+        .buy-confirm-phone {
+            color: var(--gray);
+            font-size: 0.9rem;
         }
 
         .buy-confirm-price {
             font-size: 2rem;
             font-weight: 800;
             color: var(--primary);
-            margin: 15px 0;
+            margin: 16px 0;
         }
 
         .buy-confirm-balance {
             color: var(--gray);
+            font-size: 0.95rem;
         }
 
         .buy-confirm-balance span {
@@ -1229,15 +1511,15 @@
 
         /* Deposit Modal */
         .deposit-address-box {
-            background: var(--gray-light);
+            background: var(--light);
             border-radius: var(--radius);
-            padding: 15px;
-            margin: 15px 0;
+            padding: 14px;
+            margin: 14px 0;
         }
 
         .deposit-address-label {
             color: var(--gray);
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             margin-bottom: 8px;
         }
 
@@ -1249,56 +1531,61 @@
 
         .deposit-address code {
             flex: 1;
-            font-size: 0.85rem;
+            font-size: 0.75rem;
             word-break: break-all;
             color: var(--dark);
+            font-family: monospace;
         }
 
         .deposit-warning {
-            background: rgba(255, 193, 7, 0.15);
+            background: rgba(255, 193, 7, 0.12);
             border-radius: var(--radius);
             padding: 12px;
-            margin: 15px 0;
+            margin: 14px 0;
             display: flex;
             gap: 10px;
             align-items: flex-start;
         }
 
         .deposit-warning i {
-            color: var(--warning);
+            color: #d39e00;
+            flex-shrink: 0;
         }
 
         .deposit-warning p {
             color: #856404;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
         }
 
         /* Messages Modal */
         .messages-list {
-            max-height: 400px;
+            max-height: 350px;
             overflow-y: auto;
         }
 
         .message-item {
-            background: var(--gray-light);
+            background: var(--light);
             border-radius: var(--radius);
-            padding: 15px;
+            padding: 14px;
             margin-bottom: 10px;
         }
 
         .message-code {
-            font-size: 1.5rem;
+            font-size: 1.4rem;
             font-weight: 800;
             color: var(--primary);
-            margin-bottom: 5px;
+            margin-bottom: 6px;
             display: flex;
             align-items: center;
             justify-content: space-between;
+            direction: ltr;
         }
 
         .message-text {
             color: var(--gray);
-            font-size: 0.9rem;
+            font-size: 0.85rem;
+            direction: ltr;
+            text-align: left;
         }
 
         .no-messages {
@@ -1309,38 +1596,63 @@
 
         .no-messages i {
             font-size: 3rem;
-            margin-bottom: 15px;
-            opacity: 0.5;
+            margin-bottom: 14px;
+            opacity: 0.4;
+            display: block;
+        }
+
+        .no-messages h3 {
+            margin-bottom: 8px;
+            color: var(--dark);
         }
 
         /* ==================== TOAST NOTIFICATIONS ==================== */
         .toast-container {
             position: fixed;
-            top: 20px;
+            top: calc(12px + var(--safe-top));
             left: 50%;
             transform: translateX(-50%);
             z-index: 2000;
             display: flex;
             flex-direction: column;
-            gap: 10px;
-            width: 90%;
-            max-width: 400px;
+            gap: 8px;
+            width: calc(100% - 32px);
+            max-width: 380px;
+            pointer-events: none;
         }
 
         .toast {
             background: var(--white);
             border-radius: var(--radius);
-            padding: 15px 20px;
+            padding: 14px 16px;
             box-shadow: var(--shadow-lg);
             display: flex;
             align-items: center;
             gap: 12px;
-            animation: slideDown 0.3s ease;
+            animation: toastIn 0.3s ease;
+            pointer-events: auto;
         }
 
-        @keyframes slideDown {
-            from { transform: translateY(-20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
+        @keyframes toastIn {
+            from { 
+                opacity: 0;
+                transform: translateY(-16px) scale(0.95);
+            }
+            to { 
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .toast.removing {
+            animation: toastOut 0.2s ease forwards;
+        }
+
+        @keyframes toastOut {
+            to { 
+                opacity: 0;
+                transform: translateY(-16px) scale(0.95);
+            }
         }
 
         .toast.success {
@@ -1364,86 +1676,140 @@
         }
 
         .toast.warning i {
-            color: var(--warning);
+            color: #d39e00;
         }
 
         .toast i {
-            font-size: 1.3rem;
+            font-size: 1.2rem;
+            flex-shrink: 0;
         }
 
         .toast-message {
             flex: 1;
             font-weight: 500;
+            font-size: 0.9rem;
+            color: var(--dark);
         }
 
         /* ==================== EMPTY STATE ==================== */
         .empty-state {
             text-align: center;
-            padding: 50px 20px;
+            padding: 40px 20px;
             color: var(--gray);
         }
 
         .empty-state i {
-            font-size: 4rem;
-            margin-bottom: 20px;
+            font-size: 3.5rem;
+            margin-bottom: 16px;
             opacity: 0.3;
+            display: block;
+            color: var(--gray);
         }
 
         .empty-state h3 {
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             color: var(--dark);
+            font-size: 1.1rem;
         }
 
-        /* ==================== UTILITIES ==================== */
-        .text-center { text-align: center; }
-        .text-primary { color: var(--primary); }
-        .text-success { color: var(--secondary); }
-        .text-danger { color: var(--danger); }
-        .text-gray { color: var(--gray); }
-        .font-bold { font-weight: 700; }
-        .mt-10 { margin-top: 10px; }
-        .mt-20 { margin-top: 20px; }
-        .mb-10 { margin-bottom: 10px; }
-        .mb-20 { margin-bottom: 20px; }
-
-        /* ==================== RESPONSIVE ==================== */
-        @media (min-width: 768px) {
-            .stats-grid {
-                grid-template-columns: repeat(4, 1fr);
-            }
-            
-            .action-buttons {
-                grid-template-columns: repeat(4, 1fr);
-            }
-            
-            .countries-list {
-                display: grid;
-                grid-template-columns: repeat(2, 1fr);
-            }
-            
-            .admin-stats {
-                grid-template-columns: repeat(5, 1fr);
-            }
+        .empty-state p {
+            font-size: 0.9rem;
         }
 
-        /* Loading State */
-        .loading {
+        /* ==================== LOADING STATE ==================== */
+        .loading-state {
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 40px;
         }
 
-        .loading .spinner {
-            border-color: var(--gray-light);
-            border-top-color: var(--primary);
-            width: 40px;
-            height: 40px;
+        .loading-state .spinner {
+            width: 36px;
+            height: 36px;
+        }
+
+        /* ==================== UTILITIES ==================== */
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .text-left { text-align: left; }
+        .text-primary { color: var(--primary); }
+        .text-success { color: var(--secondary); }
+        .text-danger { color: var(--danger); }
+        .text-gray { color: var(--gray); }
+        .font-bold { font-weight: 700; }
+        .mt-8 { margin-top: 8px; }
+        .mt-12 { margin-top: 12px; }
+        .mt-16 { margin-top: 16px; }
+        .mt-20 { margin-top: 20px; }
+        .mb-8 { margin-bottom: 8px; }
+        .mb-12 { margin-bottom: 12px; }
+        .mb-16 { margin-bottom: 16px; }
+        .mb-20 { margin-bottom: 20px; }
+        .hidden { display: none !important; }
+
+        /* ==================== RESPONSIVE ==================== */
+        @media (min-width: 480px) {
+            .modal {
+                border-radius: var(--radius-xl);
+                margin: 20px;
+                max-height: 80vh;
+            }
+
+            .modal-overlay {
+                align-items: center;
+                padding: 20px;
+            }
+
+            .modal-footer {
+                padding-bottom: 16px;
+            }
+        }
+
+        @media (min-width: 768px) {
+            .stats-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+            
+            .countries-list {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+            }
+            
+            .admin-stats {
+                grid-template-columns: repeat(5, 1fr);
+            }
+
+            .numbers-list {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+            }
+        }
+
+        /* ==================== LANDSCAPE FIX ==================== */
+        @media (max-height: 500px) and (orientation: landscape) {
+            .auth-screen {
+                padding: 10px;
+            }
+
+            .auth-card {
+                max-width: 100%;
+            }
+
+            .auth-header {
+                padding: 16px;
+            }
+
+            .auth-form {
+                padding: 16px;
+            }
         }
     </style>
 </head>
 <body>
-    <!-- Loading Screen -->
+        <!-- Loading Screen -->
     <div class="loading-screen" id="loadingScreen">
         <div class="loading-logo">
             <i class="fab fa-telegram"></i>
@@ -1472,15 +1838,15 @@
             <form class="auth-form active" id="loginForm" onsubmit="handleLogin(event)">
                 <div class="form-group">
                     <label>البريد الإلكتروني</label>
-                    <input type="email" id="loginEmail" placeholder="example@email.com" required>
+                    <input type="email" id="loginEmail" placeholder="example@email.com" required autocomplete="email">
                 </div>
                 <div class="form-group">
                     <label>كلمة المرور</label>
-                    <input type="password" id="loginPassword" placeholder="••••••••" required>
+                    <input type="password" id="loginPassword" placeholder="••••••••" required autocomplete="current-password">
                 </div>
                 <button type="submit" class="btn btn-primary" id="loginBtn">
                     <i class="fas fa-sign-in-alt"></i>
-                    تسجيل الدخول
+                    <span>تسجيل الدخول</span>
                 </button>
             </form>
             
@@ -1488,23 +1854,23 @@
             <form class="auth-form" id="registerForm" onsubmit="handleRegister(event)">
                 <div class="form-group">
                     <label>اسم المستخدم</label>
-                    <input type="text" id="regUsername" placeholder="اسم المستخدم" required>
+                    <input type="text" id="regUsername" placeholder="اسم المستخدم" required autocomplete="username">
                 </div>
                 <div class="form-group">
                     <label>البريد الإلكتروني</label>
-                    <input type="email" id="regEmail" placeholder="example@email.com" required>
+                    <input type="email" id="regEmail" placeholder="example@email.com" required autocomplete="email">
                 </div>
                 <div class="form-group">
                     <label>كلمة المرور</label>
-                    <input type="password" id="regPassword" placeholder="6 أحرف على الأقل" required minlength="6">
+                    <input type="password" id="regPassword" placeholder="6 أحرف على الأقل" required minlength="6" autocomplete="new-password">
                 </div>
                 <div class="form-group">
                     <label>كود الإحالة (اختياري)</label>
-                    <input type="text" id="regReferral" placeholder="أدخل كود الإحالة">
+                    <input type="text" id="regReferral" placeholder="أدخل كود الإحالة" autocomplete="off">
                 </div>
                 <button type="submit" class="btn btn-primary" id="registerBtn">
                     <i class="fas fa-user-plus"></i>
-                    إنشاء حساب
+                    <span>إنشاء حساب</span>
                 </button>
             </form>
         </div>
@@ -1516,7 +1882,7 @@
         <header class="app-header">
             <div class="header-logo">
                 <i class="fab fa-telegram"></i>
-                TeleNum
+                <span>TeleNum</span>
             </div>
             <div class="balance-box" onclick="showPage('wallet')">
                 <i class="fas fa-wallet"></i>
@@ -1528,12 +1894,12 @@
         <div class="page active" id="homePage">
             <div class="stats-grid">
                 <div class="stat-card">
-                    <i class="fas fa-phone"></i>
+                    <i class="fas fa-phone-alt"></i>
                     <div class="stat-value" id="statsNumbers">0</div>
                     <div class="stat-label">رقم متاح</div>
                 </div>
                 <div class="stat-card">
-                    <i class="fas fa-globe"></i>
+                    <i class="fas fa-globe-americas"></i>
                     <div class="stat-value" id="statsCountries">0</div>
                     <div class="stat-label">دولة</div>
                 </div>
@@ -1551,26 +1917,32 @@
             </div>
 
             <h3 class="section-title"><i class="fas fa-star"></i> الدول المميزة</h3>
-            <div class="countries-list" id="featuredCountries"></div>
+            <div class="countries-list" id="featuredCountries">
+                <div class="loading-state"><div class="spinner spinner-dark"></div></div>
+            </div>
 
-            <h3 class="section-title mt-20"><i class="fas fa-globe-americas"></i> جميع الدول</h3>
+            <h3 class="section-title mt-20"><i class="fas fa-globe"></i> جميع الدول</h3>
             <div class="search-box">
                 <i class="fas fa-search"></i>
                 <input type="text" placeholder="ابحث عن دولة..." id="countrySearch" oninput="filterCountries()">
             </div>
-            <div class="countries-list" id="allCountries"></div>
+            <div class="countries-list" id="allCountries">
+                <div class="loading-state"><div class="spinner spinner-dark"></div></div>
+            </div>
         </div>
 
         <!-- Buy Page -->
         <div class="page" id="buyPage">
             <h3 class="section-title"><i class="fas fa-shopping-cart"></i> شراء رقم</h3>
-            <p class="text-gray mb-20">اختر الدولة التي تريد شراء رقم منها</p>
+            <p class="text-gray mb-16">اختر الدولة التي تريد شراء رقم منها</p>
             
             <div class="search-box">
                 <i class="fas fa-search"></i>
                 <input type="text" placeholder="ابحث عن دولة..." id="buyCountrySearch" oninput="filterBuyCountries()">
             </div>
-            <div class="countries-list" id="buyCountriesList"></div>
+            <div class="countries-list" id="buyCountriesList">
+                <div class="loading-state"><div class="spinner spinner-dark"></div></div>
+            </div>
         </div>
 
         <!-- Sell Page -->
@@ -1581,7 +1953,7 @@
                 <i class="fas fa-exclamation-triangle"></i>
                 <div class="sell-warning-text">
                     <h4>تنبيه هام!</h4>
-                    <p>تأكد من تسجيل الخروج من جميع الأجهزة الأخرى قبل البيع. سيتم إضافة الرصيد بعد مراجعة الطلب.</p>
+                    <p>تأكد من تسجيل الخروج من جميع الأجهزة الأخرى قبل البيع. سيتم إضافة الرصيد بعد مراجعة الطلب خلال 24 ساعة.</p>
                 </div>
             </div>
 
@@ -1590,20 +1962,21 @@
                     <label>رقم الهاتف (مع رمز الدولة)</label>
                     <div class="phone-input-group">
                         <input type="tel" id="sellPhone" placeholder="+966512345678" dir="ltr">
-                        <button type="button" class="btn btn-primary" onclick="sendSellCode()" id="sendCodeBtn">
-                            إرسال الكود
+                        <button type="button" class="btn btn-primary btn-sm" onclick="sendSellCode()" id="sendCodeBtn">
+                            <i class="fas fa-paper-plane"></i>
+                            <span>إرسال</span>
                         </button>
                     </div>
                 </div>
 
                 <div class="otp-section" id="otpSection">
-                    <label class="mb-10">أدخل كود التحقق</label>
-                    <div class="otp-input">
-                        <input type="text" maxlength="1" oninput="moveToNext(this, 1)">
-                        <input type="text" maxlength="1" oninput="moveToNext(this, 2)">
-                        <input type="text" maxlength="1" oninput="moveToNext(this, 3)">
-                        <input type="text" maxlength="1" oninput="moveToNext(this, 4)">
-                        <input type="text" maxlength="1" oninput="moveToNext(this, 5)">
+                    <div class="otp-label">أدخل كود التحقق المرسل</div>
+                    <div class="otp-input" id="otpInputs">
+                        <input type="tel" maxlength="1" oninput="handleOtpInput(this, 0)" onkeydown="handleOtpKeydown(event, 0)">
+                        <input type="tel" maxlength="1" oninput="handleOtpInput(this, 1)" onkeydown="handleOtpKeydown(event, 1)">
+                        <input type="tel" maxlength="1" oninput="handleOtpInput(this, 2)" onkeydown="handleOtpKeydown(event, 2)">
+                        <input type="tel" maxlength="1" oninput="handleOtpInput(this, 3)" onkeydown="handleOtpKeydown(event, 3)">
+                        <input type="tel" maxlength="1" oninput="handleOtpInput(this, 4)" onkeydown="handleOtpKeydown(event, 4)">
                     </div>
                 </div>
 
@@ -1614,17 +1987,19 @@
                     </div>
                 </div>
 
-                <button type="button" class="btn btn-success" onclick="verifySellCode()" id="verifyCodeBtn" style="display: none; width: 100%;">
-                    <i class="fas fa-check"></i>
-                    تأكيد البيع
+                <button type="button" class="btn btn-success" onclick="verifySellCode()" id="verifyCodeBtn" style="display: none; width: 100%; margin-top: 16px;">
+                    <i class="fas fa-check-circle"></i>
+                    <span>تأكيد البيع</span>
                 </button>
             </div>
         </div>
 
         <!-- My Numbers Page -->
         <div class="page" id="numbersPage">
-            <h3 class="section-title"><i class="fas fa-list"></i> أرقامي</h3>
-            <div class="numbers-list" id="myNumbersList"></div>
+            <h3 class="section-title"><i class="fas fa-list-alt"></i> أرقامي</h3>
+            <div class="numbers-list" id="myNumbersList">
+                <div class="loading-state"><div class="spinner spinner-dark"></div></div>
+            </div>
         </div>
 
         <!-- Wallet Page -->
@@ -1650,16 +2025,17 @@
                 <p class="text-gray">شارك كود الإحالة واحصل على $0.05 لكل مستخدم جديد</p>
                 
                 <div class="referral-code-box">
-                    <span class="referral-code" id="referralCode">LOADING</span>
+                    <span class="referral-code" id="referralCode">------</span>
                     <button class="copy-btn" onclick="copyReferralCode()">
                         <i class="fas fa-copy"></i>
+                        <span>نسخ</span>
                     </button>
                 </div>
 
                 <div class="referral-stats">
                     <div class="referral-stat">
                         <div class="referral-stat-value" id="referralCount">0</div>
-                        <div class="referral-stat-label">إحالة</div>
+                        <div class="referral-stat-label">عدد الإحالات</div>
                     </div>
                     <div class="referral-stat">
                         <div class="referral-stat-value" id="referralEarnings">$0.00</div>
@@ -1688,16 +2064,23 @@
                         <div class="settings-item-value" id="settingsEmail">-</div>
                     </div>
                 </div>
+                <div class="settings-item">
+                    <i class="fas fa-fingerprint"></i>
+                    <div class="settings-item-info">
+                        <div class="settings-item-label">معرف الجهاز</div>
+                        <div class="settings-item-value" id="settingsDeviceId">-</div>
+                    </div>
+                </div>
             </div>
 
             <button class="btn admin-btn" id="adminBtn" onclick="showPage('admin')">
                 <i class="fas fa-shield-alt"></i>
-                لوحة التحكم
+                <span>لوحة التحكم</span>
             </button>
 
             <button class="btn logout-btn" onclick="logout()">
                 <i class="fas fa-sign-out-alt"></i>
-                تسجيل الخروج
+                <span>تسجيل الخروج</span>
             </button>
         </div>
 
@@ -1705,6 +2088,9 @@
         <div class="page admin-page" id="adminPage">
             <div class="admin-header">
                 <h1><i class="fas fa-shield-alt"></i> لوحة التحكم</h1>
+                <button class="admin-back" onclick="showPage('settings')">
+                    <i class="fas fa-arrow-right"></i> رجوع
+                </button>
             </div>
 
             <div class="admin-stats" id="adminStats">
@@ -1724,18 +2110,14 @@
                     <div class="value" id="adminWithdrawals">0</div>
                     <div class="label">طلبات سحب</div>
                 </div>
-                <div class="admin-stat-card">
-                    <div class="value" id="adminDeposits">0</div>
-                    <div class="label">إيداعات معلقة</div>
-                </div>
             </div>
 
-            <div class="admin-tabs">
-                <button class="admin-tab active" onclick="switchAdminTab('sells')">طلبات البيع</button>
-                <button class="admin-tab" onclick="switchAdminTab('withdrawals')">طلبات السحب</button>
-                <button class="admin-tab" onclick="switchAdminTab('deposits')">الإيداعات</button>
-                <button class="admin-tab" onclick="switchAdminTab('numbers')">الأرقام</button>
-                <button class="admin-tab" onclick="switchAdminTab('users')">المستخدمين</button>
+            <div class="admin-tabs" id="adminTabs">
+                <button class="admin-tab active" data-tab="sells">طلبات البيع</button>
+                <button class="admin-tab" data-tab="withdrawals">طلبات السحب</button>
+                <button class="admin-tab" data-tab="deposits">الإيداعات</button>
+                <button class="admin-tab" data-tab="numbers">الأرقام</button>
+                <button class="admin-tab" data-tab="users">المستخدمين</button>
             </div>
 
             <!-- Sells Tab -->
@@ -1755,27 +2137,35 @@
 
             <!-- Numbers Tab -->
             <div class="admin-tab-content" id="adminNumbersTab">
-                <h4 class="mb-10">إضافة رقم جديد</h4>
+                <h4 class="mb-12">إضافة رقم جديد عبر الكود</h4>
                 <div class="admin-input-group">
                     <input type="tel" id="adminAddPhone" placeholder="+966512345678" dir="ltr">
-                    <button class="btn btn-primary" onclick="adminSendCode()">إرسال كود</button>
+                    <button class="btn btn-primary btn-sm" onclick="adminSendCode()">
+                        <i class="fas fa-paper-plane"></i> إرسال
+                    </button>
                 </div>
                 <div class="otp-section" id="adminOtpSection">
                     <div class="admin-input-group">
                         <input type="text" id="adminOtpCode" placeholder="كود التحقق">
                         <input type="password" id="admin2faPassword" placeholder="2FA (اختياري)">
-                        <button class="btn btn-success" onclick="adminVerifyCode()">إضافة</button>
+                        <button class="btn btn-success btn-sm" onclick="adminVerifyCode()">
+                            <i class="fas fa-plus"></i> إضافة
+                        </button>
                     </div>
                 </div>
-                <h4 class="mt-20 mb-10">أو إضافة عبر Session</h4>
+                
+                <h4 class="mt-20 mb-12">إضافة عبر Session String</h4>
                 <div class="admin-input-group">
                     <input type="tel" id="adminSessionPhone" placeholder="+966512345678" dir="ltr">
                 </div>
                 <div class="admin-input-group">
                     <input type="text" id="adminSessionString" placeholder="Session String">
-                    <button class="btn btn-primary" onclick="adminAddSession()">إضافة</button>
+                    <button class="btn btn-primary btn-sm" onclick="adminAddSession()">
+                        <i class="fas fa-plus"></i> إضافة
+                    </button>
                 </div>
-                <h4 class="mt-20 mb-10">الأرقام المتاحة</h4>
+                
+                <h4 class="mt-20 mb-12">الأرقام المتاحة</h4>
                 <div id="adminNumbersList"></div>
             </div>
 
@@ -1786,33 +2176,35 @@
 
             <div class="danger-zone">
                 <h3><i class="fas fa-exclamation-triangle"></i> منطقة خطرة</h3>
-                <p class="text-gray mb-10">حذف جميع البيانات نهائياً</p>
+                <p>حذف جميع البيانات نهائياً (لا يمكن التراجع)</p>
                 <div class="admin-input-group">
                     <input type="text" id="deleteConfirm" placeholder="اكتب DELETE للتأكيد">
-                    <button class="btn btn-danger" onclick="deleteAllData()">حذف الكل</button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteAllData()">
+                        <i class="fas fa-trash"></i> حذف
+                    </button>
                 </div>
             </div>
         </div>
 
         <!-- Bottom Navigation -->
-        <nav class="bottom-nav">
-            <div class="nav-item active" onclick="showPage('home')" data-page="home">
+        <nav class="bottom-nav" id="bottomNav">
+            <div class="nav-item active" data-page="home">
                 <i class="fas fa-home"></i>
                 <span>الرئيسية</span>
             </div>
-            <div class="nav-item" onclick="showPage('buy')" data-page="buy">
+            <div class="nav-item" data-page="buy">
                 <i class="fas fa-shopping-cart"></i>
                 <span>شراء</span>
             </div>
-            <div class="nav-item" onclick="showPage('numbers')" data-page="numbers">
-                <i class="fas fa-list"></i>
+            <div class="nav-item" data-page="numbers">
+                <i class="fas fa-list-alt"></i>
                 <span>أرقامي</span>
             </div>
-            <div class="nav-item" onclick="showPage('wallet')" data-page="wallet">
+            <div class="nav-item" data-page="wallet">
                 <i class="fas fa-wallet"></i>
                 <span>المحفظة</span>
             </div>
-            <div class="nav-item" onclick="showPage('settings')" data-page="settings">
+            <div class="nav-item" data-page="settings">
                 <i class="fas fa-cog"></i>
                 <span>الإعدادات</span>
             </div>
@@ -1832,6 +2224,7 @@
                 <div class="buy-confirm-info">
                     <img src="" alt="" class="buy-confirm-flag" id="buyModalFlag">
                     <div class="buy-confirm-country" id="buyModalCountry">-</div>
+                    <div class="buy-confirm-phone" id="buyModalPhone">-</div>
                     <div class="buy-confirm-price" id="buyModalPrice">$0.00</div>
                     <div class="buy-confirm-balance">
                         رصيدك الحالي: <span id="buyModalBalance">$0.00</span>
@@ -1842,7 +2235,7 @@
                 <button class="btn btn-outline" onclick="closeModal('buyModal')">إلغاء</button>
                 <button class="btn btn-success" onclick="confirmBuy()" id="confirmBuyBtn">
                     <i class="fas fa-check"></i>
-                    تأكيد الشراء
+                    <span>تأكيد الشراء</span>
                 </button>
             </div>
         </div>
@@ -1872,19 +2265,19 @@
 
                 <div class="deposit-warning">
                     <i class="fas fa-exclamation-triangle"></i>
-                    <p>تأكد من الإرسال على شبكة BEP20 (BSC) فقط!</p>
+                    <p>تأكد من الإرسال على شبكة <strong>BEP20 (BSC)</strong> فقط! أي إرسال على شبكة أخرى سيؤدي لفقدان الأموال.</p>
                 </div>
 
                 <div class="form-group">
                     <label>معرف المعاملة (TXID)</label>
-                    <input type="text" id="depositTxid" placeholder="0x..." dir="ltr">
+                    <input type="text" id="depositTxid" placeholder="0x..." dir="ltr" autocomplete="off">
                 </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-outline" onclick="closeModal('depositModal')">إلغاء</button>
-                <button class="btn btn-success" onclick="submitDeposit()">
+                <button class="btn btn-success" onclick="submitDeposit()" id="depositBtn">
                     <i class="fas fa-check"></i>
-                    تأكيد الإيداع
+                    <span>تأكيد الإيداع</span>
                 </button>
             </div>
         </div>
@@ -1901,20 +2294,20 @@
             </div>
             <div class="modal-body">
                 <div class="form-group">
-                    <label>المبلغ (الحد الأدنى $1)</label>
+                    <label>المبلغ بالدولار (الحد الأدنى $1)</label>
                     <input type="number" id="withdrawAmount" placeholder="0.00" min="1" step="0.01">
                 </div>
                 <div class="form-group">
                     <label>عنوان محفظة USDT (BEP20)</label>
-                    <input type="text" id="withdrawAddress" placeholder="0x..." dir="ltr">
+                    <input type="text" id="withdrawAddress" placeholder="0x..." dir="ltr" autocomplete="off">
                 </div>
-                <p class="text-gray text-center">رصيدك: $<span id="withdrawBalance">0.00</span></p>
+                <p class="text-gray text-center mt-12">رصيدك المتاح: <strong>$<span id="withdrawBalance">0.00</span></strong></p>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-outline" onclick="closeModal('withdrawModal')">إلغاء</button>
-                <button class="btn btn-danger" onclick="submitWithdraw()">
+                <button class="btn btn-danger" onclick="submitWithdraw()" id="withdrawBtn">
                     <i class="fas fa-paper-plane"></i>
-                    إرسال طلب السحب
+                    <span>إرسال الطلب</span>
                 </button>
             </div>
         </div>
@@ -1931,8 +2324,8 @@
             </div>
             <div class="modal-body">
                 <div class="messages-list" id="messagesList">
-                    <div class="loading">
-                        <div class="spinner"></div>
+                    <div class="loading-state">
+                        <div class="spinner spinner-dark"></div>
                     </div>
                 </div>
             </div>
@@ -1943,21 +2336,22 @@
     <div class="modal-overlay" id="adminAmountModal">
         <div class="modal">
             <div class="modal-header">
-                <h3>إدخال المبلغ</h3>
+                <h3 id="adminAmountTitle">إدخال المبلغ</h3>
                 <button class="modal-close" onclick="closeModal('adminAmountModal')">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
             <div class="modal-body">
                 <div class="form-group">
-                    <label id="adminAmountLabel">المبلغ</label>
-                    <input type="number" id="adminAmountInput" placeholder="0.00" step="0.01">
+                    <label id="adminAmountLabel">المبلغ بالدولار</label>
+                    <input type="number" id="adminAmountInput" placeholder="0.00" step="0.01" min="0">
                 </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-outline" onclick="closeModal('adminAmountModal')">إلغاء</button>
-                <button class="btn btn-success" onclick="confirmAdminAmount()" id="adminAmountConfirmBtn">
-                    تأكيد
+                <button class="btn btn-success" onclick="confirmAdminAmount()">
+                    <i class="fas fa-check"></i>
+                    <span>تأكيد</span>
                 </button>
             </div>
         </div>
@@ -1975,20 +2369,21 @@
             <div class="modal-body">
                 <div class="form-group">
                     <label>معرف المعاملة (TXID)</label>
-                    <input type="text" id="adminTxidInput" placeholder="0x..." dir="ltr">
+                    <input type="text" id="adminTxidInput" placeholder="0x..." dir="ltr" autocomplete="off">
                 </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-outline" onclick="closeModal('adminTxidModal')">إلغاء</button>
                 <button class="btn btn-success" onclick="confirmAdminTxid()">
-                    تأكيد
+                    <i class="fas fa-check"></i>
+                    <span>تأكيد</span>
                 </button>
             </div>
         </div>
     </div>
 
     <script>
-        // ==================== CONFIGURATION ====================
+                // ==================== CONFIGURATION ====================
         const API_URL = window.location.origin;
         const WALLET_ADDRESS = "0x8E00A980274Cfb22798290586d97F7D185E3092D";
 
@@ -1999,22 +2394,29 @@
         let selectedCountry = null;
         let currentAdminAction = null;
         let currentAdminId = null;
+        let isAdmin = false;
 
         // ==================== INITIALIZATION ====================
-        document.addEventListener('DOMContentLoaded', async () => {
-            // Check for admin access
+        document.addEventListener('DOMContentLoaded', init);
+
+        async function init() {
+            // Check for admin access via URL parameter
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('admin') === 'true') {
                 localStorage.setItem('isAdmin', 'true');
-                // Remove admin param from URL
-                window.history.replaceState({}, document.title, window.location.pathname);
+                // Remove admin param from URL without reload
+                const newUrl = window.location.pathname;
+                window.history.replaceState({}, document.title, newUrl);
             }
+            
+            // Check if user is admin
+            isAdmin = localStorage.getItem('isAdmin') === 'true';
 
             // Generate or get Device ID
-            deviceId = localStorage.getItem('deviceId');
+            deviceId = localStorage.getItem('telenum_deviceId');
             if (!deviceId) {
-                deviceId = 'dev_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-                localStorage.setItem('deviceId', deviceId);
+                deviceId = 'dev_' + Date.now() + '_' + generateRandomString(12);
+                localStorage.setItem('telenum_deviceId', deviceId);
             }
 
             // Check referral code in URL
@@ -2022,22 +2424,71 @@
             if (refCode) {
                 document.getElementById('regReferral').value = refCode;
                 localStorage.setItem('pendingReferral', refCode);
+                // Clean URL
+                const newUrl = window.location.pathname;
+                window.history.replaceState({}, document.title, newUrl);
             }
+
+            // Setup event listeners
+            setupEventListeners();
 
             // Try auto-login
             await tryAutoLogin();
-        });
+        }
+
+        function generateRandomString(length) {
+            const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+            let result = '';
+            for (let i = 0; i < length; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return result;
+        }
+
+        function setupEventListeners() {
+            // Bottom navigation
+            document.querySelectorAll('#bottomNav .nav-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const page = item.dataset.page;
+                    if (page) showPage(page);
+                });
+            });
+
+            // Admin tabs
+            document.querySelectorAll('#adminTabs .admin-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const tabName = tab.dataset.tab;
+                    if (tabName) switchAdminTab(tabName);
+                });
+            });
+
+            // Modal overlay click to close
+            document.querySelectorAll('.modal-overlay').forEach(overlay => {
+                overlay.addEventListener('click', (e) => {
+                    if (e.target === overlay) {
+                        overlay.classList.remove('show');
+                        document.body.style.overflow = '';
+                    }
+                });
+            });
+        }
 
         async function tryAutoLogin() {
+            if (!deviceId) {
+                showAuth();
+                return;
+            }
+
             try {
                 const response = await api('/api/auth/auto-login', 'POST', { deviceId });
-                if (response.success) {
+                if (response.success && response.user) {
                     user = response.user;
                     showApp();
                 } else {
                     showAuth();
                 }
             } catch (e) {
+                console.error('Auto-login failed:', e);
                 showAuth();
             }
         }
@@ -2047,7 +2498,8 @@
             const options = {
                 method,
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
                 }
             };
 
@@ -2055,29 +2507,37 @@
                 options.headers['Authorization'] = `Bearer ${user.token}`;
             }
 
-            if (data) {
+            if (data && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
                 options.body = JSON.stringify(data);
             }
 
-            const response = await fetch(API_URL + endpoint, options);
-            return response.json();
+            try {
+                const response = await fetch(API_URL + endpoint, options);
+                const result = await response.json();
+                return result;
+            } catch (error) {
+                console.error('API Error:', error);
+                return { success: false, error: 'خطأ في الاتصال بالسيرفر' };
+            }
         }
 
         // ==================== AUTH FUNCTIONS ====================
         function showAuth() {
             document.getElementById('loadingScreen').classList.add('hidden');
-            document.getElementById('authScreen').style.display = 'flex';
-            document.getElementById('appContainer').style.display = 'none';
+            document.getElementById('authScreen').classList.add('active');
+            document.getElementById('appContainer').classList.remove('active');
         }
 
         function showApp() {
             document.getElementById('loadingScreen').classList.add('hidden');
-            document.getElementById('authScreen').style.display = 'none';
-            document.getElementById('appContainer').style.display = 'block';
+            document.getElementById('authScreen').classList.remove('active');
+            document.getElementById('appContainer').classList.add('active');
             
-            // Show admin button if admin
-            if (localStorage.getItem('isAdmin') === 'true') {
+            // Show admin button only if admin
+            if (isAdmin) {
                 document.getElementById('adminBtn').classList.add('show');
+            } else {
+                document.getElementById('adminBtn').classList.remove('show');
             }
 
             updateUI();
@@ -2089,82 +2549,131 @@
             document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
             
-            document.querySelector(`.auth-tab:${tab === 'login' ? 'first' : 'last'}-child`).classList.add('active');
-            document.getElementById(tab === 'login' ? 'loginForm' : 'registerForm').classList.add('active');
+            if (tab === 'login') {
+                document.querySelector('.auth-tab:first-child').classList.add('active');
+                document.getElementById('loginForm').classList.add('active');
+            } else {
+                document.querySelector('.auth-tab:last-child').classList.add('active');
+                document.getElementById('registerForm').classList.add('active');
+            }
         }
 
         async function handleLogin(e) {
             e.preventDefault();
+            
             const btn = document.getElementById('loginBtn');
+            const originalContent = btn.innerHTML;
             btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري التحميل...';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>جاري الدخول...</span>';
 
-            const email = document.getElementById('loginEmail').value;
+            const email = document.getElementById('loginEmail').value.trim();
             const password = document.getElementById('loginPassword').value;
 
+            if (!email || !password) {
+                showToast('يرجى ملء جميع الحقول', 'error');
+                btn.disabled = false;
+                btn.innerHTML = originalContent;
+                return;
+            }
+
             try {
-                const response = await api('/api/auth/login', 'POST', { email, password, deviceId });
-                if (response.success) {
+                const response = await api('/api/auth/login', 'POST', { 
+                    email, 
+                    password, 
+                    deviceId 
+                });
+                
+                if (response.success && response.user) {
                     user = response.user;
                     showToast('تم تسجيل الدخول بنجاح', 'success');
                     showApp();
                 } else {
-                    showToast(response.error, 'error');
+                    showToast(response.error || 'فشل تسجيل الدخول', 'error');
                 }
             } catch (e) {
                 showToast('حدث خطأ في الاتصال', 'error');
             }
 
             btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> تسجيل الدخول';
+            btn.innerHTML = originalContent;
         }
 
         async function handleRegister(e) {
             e.preventDefault();
+            
             const btn = document.getElementById('registerBtn');
+            const originalContent = btn.innerHTML;
             btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري التحميل...';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>جاري الإنشاء...</span>';
 
-            const username = document.getElementById('regUsername').value;
-            const email = document.getElementById('regEmail').value;
+            const username = document.getElementById('regUsername').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
             const password = document.getElementById('regPassword').value;
-            let referralCode = document.getElementById('regReferral').value || localStorage.getItem('pendingReferral') || '';
+            let referralCode = document.getElementById('regReferral').value.trim() || 
+                               localStorage.getItem('pendingReferral') || '';
+
+            if (!username || !email || !password) {
+                showToast('يرجى ملء جميع الحقول المطلوبة', 'error');
+                btn.disabled = false;
+                btn.innerHTML = originalContent;
+                return;
+            }
+
+            if (password.length < 6) {
+                showToast('كلمة المرور يجب أن تكون 6 أحرف على الأقل', 'error');
+                btn.disabled = false;
+                btn.innerHTML = originalContent;
+                return;
+            }
 
             const fingerprint = {
                 userAgent: navigator.userAgent,
                 screen: `${screen.width}x${screen.height}`,
                 timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-                platform: navigator.platform
+                platform: navigator.platform,
+                language: navigator.language
             };
 
             try {
                 const response = await api('/api/auth/register', 'POST', {
-                    username, email, password, deviceId, fingerprint, referralCode
+                    username, 
+                    email, 
+                    password, 
+                    deviceId, 
+                    fingerprint, 
+                    referralCode
                 });
                 
-                if (response.success) {
+                if (response.success && response.user) {
                     user = response.user;
                     localStorage.removeItem('pendingReferral');
-                    showToast('تم إنشاء الحساب بنجاح', 'success');
+                    showToast('تم إنشاء الحساب بنجاح! 🎉', 'success');
                     showApp();
                 } else {
-                    showToast(response.error, 'error');
+                    showToast(response.error || 'فشل إنشاء الحساب', 'error');
                 }
             } catch (e) {
                 showToast('حدث خطأ في الاتصال', 'error');
             }
 
             btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-user-plus"></i> إنشاء حساب';
+            btn.innerHTML = originalContent;
         }
 
         function logout() {
+            if (!confirm('هل أنت متأكد من تسجيل الخروج؟')) return;
+            
             user = null;
-            localStorage.removeItem('deviceId');
-            deviceId = 'dev_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-            localStorage.setItem('deviceId', deviceId);
+            // Generate new device ID to allow new registration
+            deviceId = 'dev_' + Date.now() + '_' + generateRandomString(12);
+            localStorage.setItem('telenum_deviceId', deviceId);
+            
             showAuth();
-            showToast('تم تسجيل الخروج', 'success');
+            showToast('تم تسجيل الخروج بنجاح', 'success');
+            
+            // Reset forms
+            document.getElementById('loginForm').reset();
+            document.getElementById('registerForm').reset();
         }
 
         // ==================== UI FUNCTIONS ====================
@@ -2172,41 +2681,64 @@
             if (!user) return;
 
             const balance = parseFloat(user.balance || 0).toFixed(2);
+            
+            // Update all balance displays
             document.getElementById('headerBalance').textContent = '$' + balance;
             document.getElementById('walletBalance').textContent = balance;
             document.getElementById('withdrawBalance').textContent = balance;
             document.getElementById('buyModalBalance').textContent = '$' + balance;
-            document.getElementById('referralCode').textContent = user.referralCode || '-';
+            
+            // Update referral info
+            document.getElementById('referralCode').textContent = user.referralCode || '------';
             document.getElementById('referralCount').textContent = user.referralCount || 0;
             document.getElementById('referralEarnings').textContent = '$' + ((user.referralCount || 0) * 0.05).toFixed(2);
+            
+            // Update settings
             document.getElementById('settingsUsername').textContent = user.username || '-';
             document.getElementById('settingsEmail').textContent = user.email || '-';
+            document.getElementById('settingsDeviceId').textContent = deviceId ? deviceId.substring(0, 20) + '...' : '-';
         }
 
         async function refreshUserData() {
+            if (!user || !user.token) return;
+            
             try {
                 const response = await api('/api/user');
-                if (response.success) {
+                if (response.success && response.user) {
                     user = { ...user, ...response.user };
                     updateUI();
                 }
             } catch (e) {
-                console.error('Failed to refresh user data');
+                console.error('Failed to refresh user data:', e);
             }
         }
 
         // Auto refresh every 30 seconds
-        setInterval(refreshUserData, 30000);
+        setInterval(() => {
+            if (user) refreshUserData();
+        }, 30000);
 
         function showPage(pageName) {
+            // Hide all pages
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
             
-            document.getElementById(pageName + 'Page').classList.add('active');
-            const navItem = document.querySelector(`.nav-item[data-page="${pageName}"]`);
-            if (navItem) navItem.classList.add('active');
+            // Update nav items
+            document.querySelectorAll('#bottomNav .nav-item').forEach(n => n.classList.remove('active'));
+            
+            // Show target page
+            const targetPage = document.getElementById(pageName + 'Page');
+            if (targetPage) {
+                targetPage.classList.add('active');
+            }
+            
+            // Update nav item
+            const navItem = document.querySelector(`#bottomNav .nav-item[data-page="${pageName}"]`);
+            if (navItem) {
+                navItem.classList.add('active');
+            }
 
-            if (pageName === 'admin') {
+            // Special actions for specific pages
+            if (pageName === 'admin' && isAdmin) {
                 loadAdminDashboard();
             }
             if (pageName === 'buy') {
@@ -2215,6 +2747,12 @@
             if (pageName === 'numbers') {
                 loadMyNumbers();
             }
+            if (pageName === 'wallet') {
+                refreshUserData();
+            }
+
+            // Scroll to top
+            window.scrollTo(0, 0);
         }
 
         // ==================== COUNTRIES ====================
@@ -2225,16 +2763,20 @@
                     api('/api/countries')
                 ]);
 
-                if (statsRes.success) {
-                    document.getElementById('statsNumbers').textContent = statsRes.stats.availableNumbers;
-                    document.getElementById('statsCountries').textContent = statsRes.stats.totalCountries;
+                if (statsRes.success && statsRes.stats) {
+                    document.getElementById('statsNumbers').textContent = statsRes.stats.availableNumbers || 0;
+                    document.getElementById('statsCountries').textContent = statsRes.stats.totalCountries || 0;
                 }
 
-                if (countriesRes.success) {
+                if (countriesRes.success && countriesRes.countries) {
                     countries = countriesRes.countries;
                     renderCountries();
+                } else {
+                    document.getElementById('featuredCountries').innerHTML = '<div class="empty-state"><p>فشل تحميل الدول</p></div>';
+                    document.getElementById('allCountries').innerHTML = '';
                 }
             } catch (e) {
+                console.error('Failed to load countries:', e);
                 showToast('فشل تحميل البيانات', 'error');
             }
         }
@@ -2243,47 +2785,83 @@
             const featured = countries.filter(c => c.featured);
             const all = countries.filter(c => !c.featured);
 
-            document.getElementById('featuredCountries').innerHTML = featured.map(c => renderCountryCard(c)).join('');
-            document.getElementById('allCountries').innerHTML = all.map(c => renderCountryCard(c)).join('');
+            const featuredHtml = featured.length > 0 
+                ? featured.map(c => renderCountryCard(c)).join('')
+                : '<div class="empty-state"><p>لا توجد دول مميزة</p></div>';
+            
+            const allHtml = all.length > 0 
+                ? all.map(c => renderCountryCard(c)).join('')
+                : '<div class="empty-state"><p>لا توجد دول</p></div>';
+
+            document.getElementById('featuredCountries').innerHTML = featuredHtml;
+            document.getElementById('allCountries').innerHTML = allHtml;
         }
 
         function renderBuyCountries() {
+            if (countries.length === 0) {
+                document.getElementById('buyCountriesList').innerHTML = '<div class="loading-state"><div class="spinner spinner-dark"></div></div>';
+                return;
+            }
+            
             document.getElementById('buyCountriesList').innerHTML = countries.map(c => renderCountryCard(c, true)).join('');
         }
 
         function renderCountryCard(country, forBuy = false) {
-            const stockClass = country.stock > 10 ? 'high' : country.stock > 0 ? 'medium' : 'out';
-            const stockText = country.stock > 0 ? `${country.stock} متاح` : 'غير متاح';
-            const disabled = !country.enabled || country.stock === 0;
+            const stock = country.stock || 0;
+            let stockClass = 'out';
+            let stockText = 'غير متاح';
+            
+            if (stock > 10) {
+                stockClass = 'high';
+                stockText = `${stock} متاح`;
+            } else if (stock > 0) {
+                stockClass = 'medium';
+                stockText = `${stock} متاح`;
+            } else if (stock === 0) {
+                stockClass = 'out';
+                stockText = 'نفذ';
+            }
+            
+            const disabled = !country.enabled || stock === 0;
+            const flagUrl = `https://flagcdn.com/w80/${country.code.toLowerCase()}.png`;
             
             return `
-                <div class="country-card-wrapper">
-                    <div class="country-card ${disabled ? 'disabled' : ''}" onclick="${disabled ? '' : `showBuyModal('${country.code}')`}">
-                        <img src="https://flagcdn.com/w80/${country.code}.png" alt="${country.name}" class="country-flag" onerror="this.src='https://via.placeholder.com/50x35'">
-                        <div class="country-info">
-                            <div class="country-name">${country.name}</div>
-                            <div class="country-phone">${country.phone}</div>
-                        </div>
-                        <div class="country-meta">
-                            <div class="country-price">$${country.buyPrice.toFixed(2)}</div>
-                            <div class="country-stock ${stockClass}">${stockText}</div>
-                        </div>
-                    </div>
+                <div class="country-card ${disabled ? 'disabled' : ''}" onclick="${disabled ? '' : `showBuyModal('${country.code}')`}">
                     ${country.featured ? '<span class="featured-badge">⭐ مميز</span>' : ''}
+                    <img src="${flagUrl}" alt="${country.name}" class="country-flag" onerror="this.src='https://via.placeholder.com/44x30/e9ecef/6c757d?text=${country.code.toUpperCase()}'">
+                    <div class="country-info">
+                        <div class="country-name">${country.name}</div>
+                        <div class="country-phone">${country.phone}</div>
+                    </div>
+                    <div class="country-meta">
+                        <div class="country-price">$${country.buyPrice.toFixed(2)}</div>
+                        <div class="country-stock ${stockClass}">${stockText}</div>
+                    </div>
                 </div>
             `;
         }
 
         function filterCountries() {
-            const search = document.getElementById('countrySearch').value.toLowerCase();
-            const filtered = countries.filter(c => !c.featured && c.name.toLowerCase().includes(search));
-            document.getElementById('allCountries').innerHTML = filtered.map(c => renderCountryCard(c)).join('');
+            const search = document.getElementById('countrySearch').value.toLowerCase().trim();
+            const all = countries.filter(c => !c.featured);
+            const filtered = search 
+                ? all.filter(c => c.name.toLowerCase().includes(search) || c.phone.includes(search))
+                : all;
+            
+            document.getElementById('allCountries').innerHTML = filtered.length > 0 
+                ? filtered.map(c => renderCountryCard(c)).join('')
+                : '<div class="empty-state"><p>لا توجد نتائج</p></div>';
         }
 
         function filterBuyCountries() {
-            const search = document.getElementById('buyCountrySearch').value.toLowerCase();
-            const filtered = countries.filter(c => c.name.toLowerCase().includes(search));
-            document.getElementById('buyCountriesList').innerHTML = filtered.map(c => renderCountryCard(c, true)).join('');
+            const search = document.getElementById('buyCountrySearch').value.toLowerCase().trim();
+            const filtered = search 
+                ? countries.filter(c => c.name.toLowerCase().includes(search) || c.phone.includes(search))
+                : countries;
+            
+            document.getElementById('buyCountriesList').innerHTML = filtered.length > 0 
+                ? filtered.map(c => renderCountryCard(c, true)).join('')
+                : '<div class="empty-state"><p>لا توجد نتائج</p></div>';
         }
 
         // ==================== BUY FUNCTIONS ====================
@@ -2291,8 +2869,14 @@
             selectedCountry = countries.find(c => c.code === countryCode);
             if (!selectedCountry) return;
 
-            document.getElementById('buyModalFlag').src = `https://flagcdn.com/w160/${countryCode}.png`;
+            const flagUrl = `https://flagcdn.com/w160/${countryCode.toLowerCase()}.png`;
+            
+            document.getElementById('buyModalFlag').src = flagUrl;
+            document.getElementById('buyModalFlag').onerror = function() {
+                this.src = 'https://via.placeholder.com/72x50/e9ecef/6c757d?text=' + countryCode.toUpperCase();
+            };
             document.getElementById('buyModalCountry').textContent = selectedCountry.name;
+            document.getElementById('buyModalPhone').textContent = selectedCountry.phone;
             document.getElementById('buyModalPrice').textContent = '$' + selectedCountry.buyPrice.toFixed(2);
             document.getElementById('buyModalBalance').textContent = '$' + parseFloat(user.balance || 0).toFixed(2);
 
@@ -2303,28 +2887,30 @@
             if (!selectedCountry) return;
 
             const btn = document.getElementById('confirmBuyBtn');
+            const originalContent = btn.innerHTML;
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
 
             try {
                 const response = await api('/api/buy', 'POST', { country: selectedCountry.code });
+                
                 if (response.success) {
                     user.balance = response.newBalance;
                     updateUI();
                     closeModal('buyModal');
-                    showToast(`تم شراء الرقم ${response.purchase.phone} بنجاح`, 'success');
+                    showToast(`تم شراء الرقم ${response.purchase.phone} بنجاح! 🎉`, 'success');
                     loadCountries();
                     loadMyNumbers();
                     showPage('numbers');
                 } else {
-                    showToast(response.error, 'error');
+                    showToast(response.error || 'فشل الشراء', 'error');
                 }
             } catch (e) {
-                showToast('حدث خطأ', 'error');
+                showToast('حدث خطأ في الاتصال', 'error');
             }
 
             btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-check"></i> تأكيد الشراء';
+            btn.innerHTML = originalContent;
         }
 
         // ==================== SELL FUNCTIONS ====================
@@ -2336,34 +2922,55 @@
             }
 
             const btn = document.getElementById('sendCodeBtn');
+            const originalContent = btn.innerHTML;
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
 
             try {
                 const response = await api('/api/sell/send-code', 'POST', { phone });
+                
                 if (response.success) {
                     document.getElementById('otpSection').classList.add('show');
                     document.getElementById('verifyCodeBtn').style.display = 'flex';
-                    showToast('تم إرسال الكود', 'success');
+                    showToast('تم إرسال الكود بنجاح', 'success');
+                    
+                    // Focus first OTP input
+                    document.querySelector('#otpInputs input:first-child').focus();
                 } else {
-                    showToast(response.error, 'error');
+                    showToast(response.error || 'فشل إرسال الكود', 'error');
                 }
             } catch (e) {
-                showToast('حدث خطأ', 'error');
+                showToast('حدث خطأ في الاتصال', 'error');
             }
 
             btn.disabled = false;
-            btn.innerHTML = 'إرسال الكود';
+            btn.innerHTML = originalContent;
         }
 
-        function moveToNext(input, index) {
-            if (input.value.length === 1 && index < 5) {
-                input.nextElementSibling.focus();
+        function handleOtpInput(input, index) {
+            const value = input.value;
+            
+            // Only allow numbers
+            input.value = value.replace(/[^0-9]/g, '');
+            
+            // Move to next input
+            if (input.value.length === 1 && index < 4) {
+                const inputs = document.querySelectorAll('#otpInputs input');
+                inputs[index + 1].focus();
+            }
+        }
+
+        function handleOtpKeydown(e, index) {
+            const inputs = document.querySelectorAll('#otpInputs input');
+            
+            // Handle backspace
+            if (e.key === 'Backspace' && !inputs[index].value && index > 0) {
+                inputs[index - 1].focus();
             }
         }
 
         function getOtpCode() {
-            const inputs = document.querySelectorAll('.otp-input input');
+            const inputs = document.querySelectorAll('#otpInputs input');
             return Array.from(inputs).map(i => i.value).join('');
         }
 
@@ -2373,45 +2980,55 @@
             const password = document.getElementById('sell2faPassword').value;
 
             if (code.length !== 5) {
-                showToast('أدخل الكود كاملاً', 'error');
+                showToast('أدخل الكود كاملاً (5 أرقام)', 'error');
                 return;
             }
 
             const btn = document.getElementById('verifyCodeBtn');
+            const originalContent = btn.innerHTML;
             btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>جاري التحقق...</span>';
 
             try {
                 const response = await api('/api/sell/verify', 'POST', { phone, code, password });
+                
                 if (response.success) {
-                    showToast(response.message, 'success');
-                    // Reset form
-                    document.getElementById('sellPhone').value = '';
-                    document.querySelectorAll('.otp-input input').forEach(i => i.value = '');
-                    document.getElementById('otpSection').classList.remove('show');
-                    document.getElementById('passwordSection').classList.remove('show');
-                    document.getElementById('verifyCodeBtn').style.display = 'none';
+                    showToast(response.message || 'تم إرسال طلب البيع بنجاح', 'success');
+                    resetSellForm();
                 } else if (response.needs_2fa) {
                     document.getElementById('passwordSection').classList.add('show');
+                    document.getElementById('sell2faPassword').focus();
                     showToast('أدخل كلمة مرور التحقق بخطوتين', 'warning');
                 } else {
-                    showToast(response.error, 'error');
+                    showToast(response.error || 'فشل التحقق', 'error');
                 }
             } catch (e) {
-                showToast('حدث خطأ', 'error');
+                showToast('حدث خطأ في الاتصال', 'error');
             }
 
             btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-check"></i> تأكيد البيع';
+            btn.innerHTML = originalContent;
+        }
+
+        function resetSellForm() {
+            document.getElementById('sellPhone').value = '';
+            document.querySelectorAll('#otpInputs input').forEach(i => i.value = '');
+            document.getElementById('sell2faPassword').value = '';
+            document.getElementById('otpSection').classList.remove('show');
+            document.getElementById('passwordSection').classList.remove('show');
+            document.getElementById('verifyCodeBtn').style.display = 'none';
         }
 
         // ==================== MY NUMBERS ====================
         async function loadMyNumbers() {
+            const container = document.getElementById('myNumbersList');
+            container.innerHTML = '<div class="loading-state"><div class="spinner spinner-dark"></div></div>';
+            
             try {
                 const response = await api('/api/my-numbers');
+                
                 if (response.success) {
-                    const container = document.getElementById('myNumbersList');
-                    if (response.numbers.length === 0) {
+                    if (!response.numbers || response.numbers.length === 0) {
                         container.innerHTML = `
                             <div class="empty-state">
                                 <i class="fas fa-phone-slash"></i>
@@ -2420,78 +3037,103 @@
                             </div>
                         `;
                     } else {
-                        container.innerHTML = response.numbers.map(num => `
-                            <div class="number-card">
-                                <div class="number-card-header">
-                                    <img src="https://flagcdn.com/w80/${getCountryCode(num.country)}.png" alt="" onerror="this.src='https://via.placeholder.com/45x32'">
-                                    <div class="number-card-info">
-                                        <div class="number-card-phone">${num.phone}</div>
-                                        <div class="number-card-country">${num.country}</div>
+                        container.innerHTML = response.numbers.map(num => {
+                            const countryCode = num.countryCode || getCountryCodeByName(num.country);
+                            const flagUrl = countryCode 
+                                ? `https://flagcdn.com/w80/${countryCode.toLowerCase()}.png`
+                                : 'https://via.placeholder.com/40x28/e9ecef/6c757d?text=??';
+                            
+                            return `
+                                <div class="number-card">
+                                    <div class="number-card-header">
+                                        <img src="${flagUrl}" alt="" onerror="this.src='https://via.placeholder.com/40x28/e9ecef/6c757d?text=??'">
+                                        <div class="number-card-info">
+                                            <div class="number-card-phone">${num.phone}</div>
+                                            <div class="number-card-country">${num.country}</div>
+                                        </div>
+                                        <span class="number-status ${num.status}">${num.status === 'active' ? 'نشط' : 'مكتمل'}</span>
                                     </div>
-                                    <span class="number-status ${num.status}">${num.status === 'active' ? 'نشط' : 'مكتمل'}</span>
+                                    ${num.status === 'active' ? `
+                                    <div class="number-card-actions">
+                                        <button class="btn btn-primary btn-sm" onclick="showMessages('${num.id}')">
+                                            <i class="fas fa-envelope"></i>
+                                            <span>عرض الرسائل</span>
+                                        </button>
+                                        <button class="btn btn-outline btn-sm" onclick="completeNumber('${num.id}')">
+                                            <i class="fas fa-check"></i>
+                                            <span>إنهاء</span>
+                                        </button>
+                                    </div>
+                                    ` : ''}
                                 </div>
-                                ${num.status === 'active' ? `
-                                <div class="number-card-actions">
-                                    <button class="btn btn-primary" onclick="showMessages('${num.id}')">
-                                        <i class="fas fa-envelope"></i> عرض الرسائل
-                                    </button>
-                                    <button class="btn btn-outline" onclick="completeNumber('${num.id}')">
-                                        <i class="fas fa-check"></i> إنهاء
-                                    </button>
-                                </div>
-                                ` : ''}
-                            </div>
-                        `).join('');
+                            `;
+                        }).join('');
                     }
+                } else {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <h3>خطأ</h3>
+                            <p>${response.error || 'فشل تحميل الأرقام'}</p>
+                        </div>
+                    `;
                 }
             } catch (e) {
-                console.error('Failed to load numbers');
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-wifi"></i>
+                        <h3>خطأ في الاتصال</h3>
+                        <p>يرجى المحاولة مرة أخرى</p>
+                    </div>
+                `;
             }
         }
 
-        function getCountryCode(countryName) {
+        function getCountryCodeByName(countryName) {
             const country = countries.find(c => c.name === countryName);
-            return country ? country.code : 'un';
+            return country ? country.code : null;
         }
 
         async function showMessages(purchaseId) {
             openModal('messagesModal');
-            document.getElementById('messagesList').innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+            const container = document.getElementById('messagesList');
+            container.innerHTML = '<div class="loading-state"><div class="spinner spinner-dark"></div></div>';
 
             try {
                 const response = await api(`/api/messages/${purchaseId}`);
+                
                 if (response.success) {
-                    if (response.codes.length > 0) {
-                        document.getElementById('messagesList').innerHTML = response.codes.map(code => `
+                    if (response.codes && response.codes.length > 0) {
+                        container.innerHTML = response.codes.map(code => `
                             <div class="message-item">
                                 <div class="message-code">
-                                    ${code}
-                                    <button class="copy-btn" onclick="copyToClipboard('${code}')">
+                                    <span>${code}</span>
+                                    <button class="copy-btn" onclick="copyCode('${code}')">
                                         <i class="fas fa-copy"></i>
                                     </button>
                                 </div>
                             </div>
                         `).join('');
                     } else {
-                        document.getElementById('messagesList').innerHTML = `
+                        container.innerHTML = `
                             <div class="no-messages">
                                 <i class="fas fa-inbox"></i>
-                                                                <h3>لا توجد رسائل</h3>
+                                <h3>لا توجد رسائل</h3>
                                 <p>لم يتم استلام أي أكواد بعد</p>
                             </div>
                         `;
                     }
                 } else {
-                    document.getElementById('messagesList').innerHTML = `
+                    container.innerHTML = `
                         <div class="no-messages">
                             <i class="fas fa-exclamation-circle"></i>
                             <h3>خطأ</h3>
-                            <p>${response.error}</p>
+                            <p>${response.error || 'فشل تحميل الرسائل'}</p>
                         </div>
                     `;
                 }
             } catch (e) {
-                document.getElementById('messagesList').innerHTML = `
+                container.innerHTML = `
                     <div class="no-messages">
                         <i class="fas fa-wifi"></i>
                         <h3>خطأ في الاتصال</h3>
@@ -2500,16 +3142,22 @@
             }
         }
 
+        function copyCode(code) {
+            copyToClipboard(code);
+            showToast('تم نسخ الكود', 'success');
+        }
+
         async function completeNumber(purchaseId) {
-            if (!confirm('هل أنت متأكد من إنهاء هذا الرقم؟')) return;
+            if (!confirm('هل أنت متأكد من إنهاء هذا الرقم؟ لن تتمكن من استلام رسائل بعد ذلك.')) return;
 
             try {
                 const response = await api('/api/complete', 'POST', { purchaseId });
+                
                 if (response.success) {
                     showToast('تم إنهاء الرقم بنجاح', 'success');
                     loadMyNumbers();
                 } else {
-                    showToast(response.error, 'error');
+                    showToast(response.error || 'فشلت العملية', 'error');
                 }
             } catch (e) {
                 showToast('حدث خطأ', 'error');
@@ -2531,28 +3179,43 @@
 
         async function submitDeposit() {
             const txid = document.getElementById('depositTxid').value.trim();
+            
             if (!txid) {
-                showToast('أدخل معرف المعاملة', 'error');
+                showToast('أدخل معرف المعاملة (TXID)', 'error');
                 return;
             }
 
+            if (!txid.startsWith('0x') || txid.length < 60) {
+                showToast('معرف المعاملة غير صالح', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('depositBtn');
+            const originalContent = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>جاري التحقق...</span>';
+
             try {
                 const response = await api('/api/deposit', 'POST', { txid });
+                
                 if (response.success) {
                     if (response.pending) {
-                        showToast(response.message, 'warning');
+                        showToast(response.message || 'تم إرسال الطلب للمراجعة', 'warning');
                     } else {
                         user.balance = response.newBalance;
                         updateUI();
-                        showToast(response.message, 'success');
+                        showToast(response.message || 'تم الإيداع بنجاح! 🎉', 'success');
                     }
                     closeModal('depositModal');
                 } else {
-                    showToast(response.error, 'error');
+                    showToast(response.error || 'فشل الإيداع', 'error');
                 }
             } catch (e) {
-                showToast('حدث خطأ', 'error');
+                showToast('حدث خطأ في الاتصال', 'error');
             }
+
+            btn.disabled = false;
+            btn.innerHTML = originalContent;
         }
 
         async function submitWithdraw() {
@@ -2564,24 +3227,38 @@
                 return;
             }
 
+            if (amount > parseFloat(user.balance || 0)) {
+                showToast('رصيدك غير كافٍ', 'error');
+                return;
+            }
+
             if (!address || !address.startsWith('0x') || address.length !== 42) {
                 showToast('عنوان المحفظة غير صالح', 'error');
                 return;
             }
 
+            const btn = document.getElementById('withdrawBtn');
+            const originalContent = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>جاري الإرسال...</span>';
+
             try {
                 const response = await api('/api/withdraw', 'POST', { amount, address });
+                
                 if (response.success) {
                     user.balance = response.newBalance;
                     updateUI();
-                    showToast(response.message, 'success');
+                    showToast(response.message || 'تم إرسال طلب السحب بنجاح', 'success');
                     closeModal('withdrawModal');
                 } else {
-                    showToast(response.error, 'error');
+                    showToast(response.error || 'فشل السحب', 'error');
                 }
             } catch (e) {
-                showToast('حدث خطأ', 'error');
+                showToast('حدث خطأ في الاتصال', 'error');
             }
+
+            btn.disabled = false;
+            btn.innerHTML = originalContent;
         }
 
         function copyWalletAddress() {
@@ -2590,93 +3267,114 @@
         }
 
         function copyReferralCode() {
-            copyToClipboard(user.referralCode);
-            showToast('تم نسخ كود الإحالة', 'success');
+            if (user && user.referralCode) {
+                const referralLink = window.location.origin + '?ref=' + user.referralCode;
+                copyToClipboard(referralLink);
+                showToast('تم نسخ رابط الإحالة', 'success');
+            }
         }
 
         function copyToClipboard(text) {
-            if (navigator.clipboard) {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
                 navigator.clipboard.writeText(text);
             } else {
                 const textarea = document.createElement('textarea');
                 textarea.value = text;
+                textarea.style.position = 'fixed';
+                textarea.style.opacity = '0';
                 document.body.appendChild(textarea);
                 textarea.select();
                 document.execCommand('copy');
                 document.body.removeChild(textarea);
             }
         }
-
-        // ==================== ADMIN FUNCTIONS ====================
+                // ==================== ADMIN FUNCTIONS ====================
         async function loadAdminDashboard() {
+            if (!isAdmin) {
+                showPage('settings');
+                return;
+            }
+
             try {
                 const response = await api('/api/admin/dashboard');
-                if (response.success) {
-                    document.getElementById('adminUsers').textContent = response.stats.totalUsers;
-                    document.getElementById('adminNumbers').textContent = response.stats.availableNumbers;
-                    document.getElementById('adminSells').textContent = response.stats.pendingSells;
-                    document.getElementById('adminWithdrawals').textContent = response.stats.pendingWithdrawals;
-                    document.getElementById('adminDeposits').textContent = response.stats.pendingDeposits;
+                
+                if (response.success && response.stats) {
+                    document.getElementById('adminUsers').textContent = response.stats.totalUsers || 0;
+                    document.getElementById('adminNumbers').textContent = response.stats.availableNumbers || 0;
+                    document.getElementById('adminSells').textContent = response.stats.pendingSells || 0;
+                    document.getElementById('adminWithdrawals').textContent = response.stats.pendingWithdrawals || 0;
                 }
 
                 // Load all tabs data
-                loadAdminSells();
-                loadAdminWithdrawals();
-                loadAdminDeposits();
-                loadAdminNumbers();
-                loadAdminUsers();
+                await Promise.all([
+                    loadAdminSells(),
+                    loadAdminWithdrawals(),
+                    loadAdminDeposits(),
+                    loadAdminNumbers(),
+                    loadAdminUsers()
+                ]);
             } catch (e) {
-                console.error('Failed to load admin dashboard');
+                console.error('Failed to load admin dashboard:', e);
             }
         }
 
-        function switchAdminTab(tab) {
-            document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.admin-tab-content').forEach(c => c.classList.remove('active'));
+        function switchAdminTab(tabName) {
+            // Update tabs
+            document.querySelectorAll('#adminTabs .admin-tab').forEach(t => t.classList.remove('active'));
+            document.querySelector(`#adminTabs .admin-tab[data-tab="${tabName}"]`).classList.add('active');
             
-            event.target.classList.add('active');
-            document.getElementById('admin' + tab.charAt(0).toUpperCase() + tab.slice(1) + 'Tab').classList.add('active');
+            // Update content
+            document.querySelectorAll('.admin-tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById('admin' + tabName.charAt(0).toUpperCase() + tabName.slice(1) + 'Tab').classList.add('active');
         }
 
         async function loadAdminSells() {
+            const container = document.getElementById('adminSellsList');
+            
             try {
                 const response = await api('/api/admin/sells');
-                if (response.success) {
-                    const container = document.getElementById('adminSellsList');
+                
+                if (response.success && response.requests) {
                     if (response.requests.length === 0) {
-                        container.innerHTML = '<div class="empty-state"><i class="fas fa-check-circle"></i><h3>لا توجد طلبات</h3></div>';
+                        container.innerHTML = '<div class="empty-state"><i class="fas fa-check-circle"></i><h3>لا توجد طلبات معلقة</h3></div>';
                     } else {
                         container.innerHTML = response.requests.map(req => `
                             <div class="admin-card">
                                 <div class="admin-card-header">
                                     <span class="admin-card-title">${req.phone}</span>
                                     <div class="admin-card-actions">
-                                        <button class="btn btn-success" onclick="approveSell('${req.id}')">قبول</button>
-                                        <button class="btn btn-danger" onclick="rejectSell('${req.id}')">رفض</button>
+                                        <button class="btn btn-success btn-sm" onclick="approveSell('${req.id}')">
+                                            <i class="fas fa-check"></i> قبول
+                                        </button>
+                                        <button class="btn btn-danger btn-sm" onclick="rejectSell('${req.id}')">
+                                            <i class="fas fa-times"></i> رفض
+                                        </button>
                                     </div>
                                 </div>
                                 <div class="admin-card-details">
-                                    <p>الدولة: ${req.country}</p>
-                                    <p>السعر: $${req.price}</p>
+                                    <p><strong>المستخدم:</strong> ${req.username || '-'}</p>
+                                    <p><strong>الدولة:</strong> ${req.country || '-'}</p>
+                                    <p><strong>السعر:</strong> $${req.price || 0}</p>
                                 </div>
                             </div>
                         `).join('');
                     }
                 }
             } catch (e) {
-                console.error('Failed to load sells');
+                container.innerHTML = '<div class="empty-state"><p>فشل التحميل</p></div>';
             }
         }
 
         async function approveSell(id) {
             if (!confirm('هل أنت متأكد من قبول هذا الطلب؟')) return;
+            
             try {
                 const response = await api('/api/admin/approve-sell', 'POST', { id });
                 if (response.success) {
-                    showToast('تم قبول الطلب', 'success');
+                    showToast('تم قبول الطلب وإضافة الرقم', 'success');
                     loadAdminDashboard();
                 } else {
-                    showToast(response.error, 'error');
+                    showToast(response.error || 'فشلت العملية', 'error');
                 }
             } catch (e) {
                 showToast('حدث خطأ', 'error');
@@ -2685,13 +3383,14 @@
 
         async function rejectSell(id) {
             if (!confirm('هل أنت متأكد من رفض هذا الطلب؟')) return;
+            
             try {
                 const response = await api('/api/admin/reject-sell', 'POST', { id });
                 if (response.success) {
                     showToast('تم رفض الطلب', 'success');
                     loadAdminDashboard();
                 } else {
-                    showToast(response.error, 'error');
+                    showToast(response.error || 'فشلت العملية', 'error');
                 }
             } catch (e) {
                 showToast('حدث خطأ', 'error');
@@ -2699,36 +3398,42 @@
         }
 
         async function loadAdminWithdrawals() {
+            const container = document.getElementById('adminWithdrawalsList');
+            
             try {
                 const response = await api('/api/admin/withdrawals');
-                if (response.success) {
-                    const container = document.getElementById('adminWithdrawalsList');
+                
+                if (response.success && response.withdrawals) {
                     if (response.withdrawals.length === 0) {
-                        container.innerHTML = '<div class="empty-state"><i class="fas fa-check-circle"></i><h3>لا توجد طلبات</h3></div>';
+                        container.innerHTML = '<div class="empty-state"><i class="fas fa-check-circle"></i><h3>لا توجد طلبات سحب</h3></div>';
                     } else {
                         container.innerHTML = response.withdrawals.map(w => `
                             <div class="admin-card">
                                 <div class="admin-card-header">
-                                    <span class="admin-card-title">${w.username}</span>
+                                    <span class="admin-card-title">${w.username || '-'}</span>
                                     <div class="admin-card-actions">
-                                        <button class="btn btn-success" onclick="approveWithdrawal('${w.id}')">قبول</button>
-                                        <button class="btn btn-danger" onclick="rejectWithdrawal('${w.id}')">رفض</button>
+                                        <button class="btn btn-success btn-sm" onclick="approveWithdrawal('${w.id}')">
+                                            <i class="fas fa-check"></i> قبول
+                                        </button>
+                                        <button class="btn btn-danger btn-sm" onclick="rejectWithdrawal('${w.id}')">
+                                            <i class="fas fa-times"></i> رفض
+                                        </button>
                                     </div>
                                 </div>
                                 <div class="admin-card-details">
-                                    <p>المبلغ: $${w.amount}</p>
-                                    <p>العنوان: <code style="font-size: 0.8rem;">${w.address}</code></p>
+                                    <p><strong>المبلغ:</strong> $${w.amount}</p>
+                                    <p><strong>العنوان:</strong> <code>${w.address}</code></p>
                                 </div>
                             </div>
                         `).join('');
                     }
                 }
             } catch (e) {
-                console.error('Failed to load withdrawals');
+                container.innerHTML = '<div class="empty-state"><p>فشل التحميل</p></div>';
             }
         }
 
-        async function approveWithdrawal(id) {
+        function approveWithdrawal(id) {
             currentAdminAction = 'withdrawal';
             currentAdminId = id;
             document.getElementById('adminTxidInput').value = '';
@@ -2737,6 +3442,7 @@
 
         async function confirmAdminTxid() {
             const txid = document.getElementById('adminTxidInput').value.trim();
+            
             if (!txid) {
                 showToast('أدخل TXID', 'error');
                 return;
@@ -2747,12 +3453,13 @@
                     id: currentAdminId, 
                     txid 
                 });
+                
                 if (response.success) {
                     showToast('تم قبول طلب السحب', 'success');
                     closeModal('adminTxidModal');
                     loadAdminDashboard();
                 } else {
-                    showToast(response.error, 'error');
+                    showToast(response.error || 'فشلت العملية', 'error');
                 }
             } catch (e) {
                 showToast('حدث خطأ', 'error');
@@ -2760,14 +3467,15 @@
         }
 
         async function rejectWithdrawal(id) {
-            if (!confirm('هل أنت متأكد من رفض هذا الطلب؟ سيتم إعادة الرصيد للمستخدم.')) return;
+            if (!confirm('هل أنت متأكد؟ سيتم إعادة المبلغ للمستخدم.')) return;
+            
             try {
                 const response = await api('/api/admin/reject-withdrawal', 'POST', { id });
                 if (response.success) {
-                    showToast('تم رفض الطلب وإعادة الرصيد', 'success');
+                    showToast('تم الرفض وإعادة المبلغ', 'success');
                     loadAdminDashboard();
                 } else {
-                    showToast(response.error, 'error');
+                    showToast(response.error || 'فشلت العملية', 'error');
                 }
             } catch (e) {
                 showToast('حدث خطأ', 'error');
@@ -2775,45 +3483,53 @@
         }
 
         async function loadAdminDeposits() {
+            const container = document.getElementById('adminDepositsList');
+            
             try {
                 const response = await api('/api/admin/pending-deposits');
-                if (response.success) {
-                    const container = document.getElementById('adminDepositsList');
+                
+                if (response.success && response.deposits) {
                     if (response.deposits.length === 0) {
                         container.innerHTML = '<div class="empty-state"><i class="fas fa-check-circle"></i><h3>لا توجد إيداعات معلقة</h3></div>';
                     } else {
                         container.innerHTML = response.deposits.map(d => `
                             <div class="admin-card">
                                 <div class="admin-card-header">
-                                    <span class="admin-card-title">${d.username}</span>
+                                    <span class="admin-card-title">${d.username || '-'}</span>
                                     <div class="admin-card-actions">
-                                        <button class="btn btn-success" onclick="approveDeposit('${d.id}')">قبول</button>
-                                        <button class="btn btn-danger" onclick="rejectDeposit('${d.id}')">رفض</button>
+                                        <button class="btn btn-success btn-sm" onclick="approveDeposit('${d.id}')">
+                                            <i class="fas fa-check"></i> قبول
+                                        </button>
+                                        <button class="btn btn-danger btn-sm" onclick="rejectDeposit('${d.id}')">
+                                            <i class="fas fa-times"></i> رفض
+                                        </button>
                                     </div>
                                 </div>
                                 <div class="admin-card-details">
-                                    <p>TXID: <code style="font-size: 0.75rem; word-break: break-all;">${d.txid}</code></p>
-                                    <p>السبب: ${d.error || 'غير محدد'}</p>
+                                    <p><strong>TXID:</strong> <code>${d.txid}</code></p>
+                                    <p><strong>السبب:</strong> ${d.error || 'فشل التحقق التلقائي'}</p>
                                 </div>
                             </div>
                         `).join('');
                     }
                 }
             } catch (e) {
-                console.error('Failed to load deposits');
+                container.innerHTML = '<div class="empty-state"><p>فشل التحميل</p></div>';
             }
         }
 
-        async function approveDeposit(id) {
+        function approveDeposit(id) {
             currentAdminAction = 'deposit';
             currentAdminId = id;
             document.getElementById('adminAmountInput').value = '';
+            document.getElementById('adminAmountTitle').textContent = 'قبول الإيداع';
             document.getElementById('adminAmountLabel').textContent = 'المبلغ بالدولار';
             openModal('adminAmountModal');
         }
 
         async function confirmAdminAmount() {
             const amount = parseFloat(document.getElementById('adminAmountInput').value);
+            
             if (!amount || amount <= 0) {
                 showToast('أدخل مبلغ صحيح', 'error');
                 return;
@@ -2821,6 +3537,7 @@
 
             try {
                 let response;
+                
                 if (currentAdminAction === 'deposit') {
                     response = await api('/api/admin/approve-deposit', 'POST', { 
                         id: currentAdminId, 
@@ -2832,12 +3549,12 @@
                     });
                 }
 
-                if (response.success) {
+                if (response && response.success) {
                     showToast('تمت العملية بنجاح', 'success');
                     closeModal('adminAmountModal');
                     loadAdminDashboard();
                 } else {
-                    showToast(response.error, 'error');
+                    showToast(response?.error || 'فشلت العملية', 'error');
                 }
             } catch (e) {
                 showToast('حدث خطأ', 'error');
@@ -2846,13 +3563,14 @@
 
         async function rejectDeposit(id) {
             if (!confirm('هل أنت متأكد من رفض هذا الإيداع؟')) return;
+            
             try {
                 const response = await api('/api/admin/reject-deposit', 'POST', { id });
                 if (response.success) {
                     showToast('تم رفض الإيداع', 'success');
                     loadAdminDashboard();
                 } else {
-                    showToast(response.error, 'error');
+                    showToast(response.error || 'فشلت العملية', 'error');
                 }
             } catch (e) {
                 showToast('حدث خطأ', 'error');
@@ -2860,35 +3578,38 @@
         }
 
         async function loadAdminNumbers() {
+            const container = document.getElementById('adminNumbersList');
+            
             try {
                 const response = await api('/api/admin/numbers');
-                if (response.success) {
-                    const container = document.getElementById('adminNumbersList');
+                
+                if (response.success && response.numbers) {
                     if (response.numbers.length === 0) {
-                        container.innerHTML = '<div class="empty-state"><i class="fas fa-phone-slash"></i><h3>لا توجد أرقام</h3></div>';
+                        container.innerHTML = '<div class="empty-state"><i class="fas fa-phone-slash"></i><h3>لا توجد أرقام متاحة</h3></div>';
                     } else {
                         container.innerHTML = response.numbers.map(num => `
                             <div class="admin-card">
                                 <div class="admin-card-header">
                                     <span class="admin-card-title">${num.phone}</span>
-                                    <button class="btn btn-danger" onclick="deleteNumber('${num.id}')">
+                                    <button class="btn btn-danger btn-sm" onclick="deleteNumber('${num.id}')">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </div>
                                 <div class="admin-card-details">
-                                    <p>الدولة: ${num.country || 'غير محدد'}</p>
+                                    <p><strong>الدولة:</strong> ${num.countryName || num.country || '-'}</p>
                                 </div>
                             </div>
                         `).join('');
                     }
                 }
             } catch (e) {
-                console.error('Failed to load numbers');
+                container.innerHTML = '<div class="empty-state"><p>فشل التحميل</p></div>';
             }
         }
 
         async function adminSendCode() {
             const phone = document.getElementById('adminAddPhone').value.trim();
+            
             if (!phone) {
                 showToast('أدخل رقم الهاتف', 'error');
                 return;
@@ -2896,11 +3617,12 @@
 
             try {
                 const response = await api('/api/admin/add-send-code', 'POST', { phone });
+                
                 if (response.success) {
                     document.getElementById('adminOtpSection').classList.add('show');
                     showToast('تم إرسال الكود', 'success');
                 } else {
-                    showToast(response.error, 'error');
+                    showToast(response.error || 'فشل الإرسال', 'error');
                 }
             } catch (e) {
                 showToast('حدث خطأ', 'error');
@@ -2919,18 +3641,19 @@
 
             try {
                 const response = await api('/api/admin/add-verify', 'POST', { phone, code, password });
+                
                 if (response.success) {
                     showToast('تم إضافة الرقم بنجاح', 'success');
                     document.getElementById('adminAddPhone').value = '';
                     document.getElementById('adminOtpCode').value = '';
                     document.getElementById('admin2faPassword').value = '';
                     document.getElementById('adminOtpSection').classList.remove('show');
-                    loadAdminNumbers();
                     loadAdminDashboard();
                 } else if (response.needs_2fa) {
                     showToast('أدخل كلمة مرور 2FA', 'warning');
+                    document.getElementById('admin2faPassword').focus();
                 } else {
-                    showToast(response.error, 'error');
+                    showToast(response.error || 'فشل الإضافة', 'error');
                 }
             } catch (e) {
                 showToast('حدث خطأ', 'error');
@@ -2942,20 +3665,20 @@
             const session = document.getElementById('adminSessionString').value.trim();
 
             if (!phone || !session) {
-                showToast('أدخل الرقم والـ Session', 'error');
+                showToast('أدخل الرقم و Session String', 'error');
                 return;
             }
 
             try {
                 const response = await api('/api/admin/add-session', 'POST', { phone, session });
+                
                 if (response.success) {
                     showToast('تم إضافة الرقم', 'success');
                     document.getElementById('adminSessionPhone').value = '';
                     document.getElementById('adminSessionString').value = '';
-                    loadAdminNumbers();
                     loadAdminDashboard();
                 } else {
-                    showToast(response.error, 'error');
+                    showToast(response.error || 'فشل الإضافة', 'error');
                 }
             } catch (e) {
                 showToast('حدث خطأ', 'error');
@@ -2964,14 +3687,14 @@
 
         async function deleteNumber(id) {
             if (!confirm('هل أنت متأكد من حذف هذا الرقم؟')) return;
+            
             try {
                 const response = await api('/api/admin/delete-number', 'POST', { id });
                 if (response.success) {
                     showToast('تم حذف الرقم', 'success');
-                    loadAdminNumbers();
                     loadAdminDashboard();
                 } else {
-                    showToast(response.error, 'error');
+                    showToast(response.error || 'فشل الحذف', 'error');
                 }
             } catch (e) {
                 showToast('حدث خطأ', 'error');
@@ -2979,38 +3702,40 @@
         }
 
         async function loadAdminUsers() {
+            const container = document.getElementById('adminUsersList');
+            
             try {
                 const response = await api('/api/admin/users');
-                if (response.success) {
-                    const container = document.getElementById('adminUsersList');
+                
+                if (response.success && response.users) {
                     if (response.users.length === 0) {
                         container.innerHTML = '<div class="empty-state"><i class="fas fa-users"></i><h3>لا يوجد مستخدمين</h3></div>';
                     } else {
                         container.innerHTML = response.users.map(u => `
                             <div class="admin-card">
                                 <div class="admin-card-header">
-                                    <span class="admin-card-title">${u.username}</span>
+                                    <span class="admin-card-title">${u.username || '-'}</span>
                                     <div class="admin-card-actions">
-                                        <button class="btn btn-primary" onclick="addUserBalance('${u.uid}')" style="padding: 6px 10px;">
+                                        <button class="btn btn-primary btn-sm" onclick="addUserBalance('${u.uid}')" title="إضافة رصيد">
                                             <i class="fas fa-plus"></i>
                                         </button>
-                                        <button class="btn ${u.banned ? 'btn-success' : 'btn-danger'}" onclick="toggleBan('${u.uid}', ${!u.banned})" style="padding: 6px 10px;">
+                                        <button class="btn ${u.banned ? 'btn-success' : 'btn-danger'} btn-sm" onclick="toggleBan('${u.uid}', ${!u.banned})" title="${u.banned ? 'فك الحظر' : 'حظر'}">
                                             <i class="fas fa-${u.banned ? 'unlock' : 'ban'}"></i>
                                         </button>
                                     </div>
                                 </div>
                                 <div class="admin-card-details">
-                                    <p>البريد: ${u.email}</p>
-                                    <p>الرصيد: $${parseFloat(u.balance || 0).toFixed(2)}</p>
-                                    <p>الإحالات: ${u.referralCount || 0}</p>
-                                    ${u.banned ? '<p style="color: var(--danger);">⛔ محظور</p>' : ''}
+                                    <p><strong>البريد:</strong> ${u.email || '-'}</p>
+                                    <p><strong>الرصيد:</strong> $${parseFloat(u.balance || 0).toFixed(2)}</p>
+                                    <p><strong>الإحالات:</strong> ${u.referralCount || 0}</p>
+                                    ${u.banned ? '<p style="color: var(--danger);"><i class="fas fa-ban"></i> محظور</p>' : ''}
                                 </div>
                             </div>
                         `).join('');
                     }
                 }
             } catch (e) {
-                console.error('Failed to load users');
+                container.innerHTML = '<div class="empty-state"><p>فشل التحميل</p></div>';
             }
         }
 
@@ -3018,6 +3743,7 @@
             currentAdminAction = 'addBalance';
             currentAdminId = uid;
             document.getElementById('adminAmountInput').value = '';
+            document.getElementById('adminAmountTitle').textContent = 'إضافة رصيد';
             document.getElementById('adminAmountLabel').textContent = 'المبلغ المراد إضافته';
             openModal('adminAmountModal');
         }
@@ -3032,7 +3758,7 @@
                     showToast(`تم ${action} المستخدم`, 'success');
                     loadAdminUsers();
                 } else {
-                    showToast(response.error, 'error');
+                    showToast(response.error || 'فشلت العملية', 'error');
                 }
             } catch (e) {
                 showToast('حدث خطأ', 'error');
@@ -3040,22 +3766,26 @@
         }
 
         async function deleteAllData() {
-            const confirm_text = document.getElementById('deleteConfirm').value;
-            if (confirm_text !== 'DELETE') {
-                showToast('اكتب DELETE للتأكيد', 'error');
+            const confirmText = document.getElementById('deleteConfirm').value.trim();
+            
+            if (confirmText !== 'DELETE') {
+                showToast('اكتب DELETE بالإنجليزية للتأكيد', 'error');
                 return;
             }
 
-            if (!confirm('⚠️ تحذير أخير: سيتم حذف جميع البيانات نهائياً. هل أنت متأكد؟')) return;
+            if (!confirm('⚠️ تحذير أخير!\n\nسيتم حذف جميع البيانات نهائياً ولا يمكن التراجع.\n\nهل أنت متأكد؟')) return;
 
             try {
                 const response = await api('/api/admin/delete-all', 'POST', { confirm: 'DELETE' });
+                
                 if (response.success) {
                     showToast('تم حذف جميع البيانات', 'success');
                     document.getElementById('deleteConfirm').value = '';
-                    logout();
+                    setTimeout(() => {
+                        logout();
+                    }, 1500);
                 } else {
-                    showToast(response.error, 'error');
+                    showToast(response.error || 'فشل الحذف', 'error');
                 }
             } catch (e) {
                 showToast('حدث خطأ', 'error');
@@ -3064,26 +3794,22 @@
 
         // ==================== MODAL FUNCTIONS ====================
         function openModal(modalId) {
-            document.getElementById(modalId).classList.add('show');
-            document.body.style.overflow = 'hidden';
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.add('show');
+                document.body.style.overflow = 'hidden';
+            }
         }
 
         function closeModal(modalId) {
-            document.getElementById(modalId).classList.remove('show');
-            document.body.style.overflow = '';
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.remove('show');
+                document.body.style.overflow = '';
+            }
         }
 
-        // Close modal on overlay click
-        document.querySelectorAll('.modal-overlay').forEach(overlay => {
-            overlay.addEventListener('click', (e) => {
-                if (e.target === overlay) {
-                    overlay.classList.remove('show');
-                    document.body.style.overflow = '';
-                }
-            });
-        });
-
-        // ==================== TOAST FUNCTIONS ====================
+        // ==================== TOAST NOTIFICATIONS ====================
         function showToast(message, type = 'success') {
             const container = document.getElementById('toastContainer');
             const toast = document.createElement('div');
@@ -3100,16 +3826,50 @@
             
             container.appendChild(toast);
             
+            // Auto remove
             setTimeout(() => {
-                toast.style.animation = 'fadeIn 0.3s ease reverse';
-                setTimeout(() => toast.remove(), 300);
+                toast.classList.add('removing');
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        toast.parentNode.removeChild(toast);
+                    }
+                }, 200);
             }, 3000);
         }
 
-        // ==================== SERVICE WORKER (Optional PWA) ====================
-        if ('serviceWorker' in navigator) {
-            // Can be implemented for PWA support
-        }
+        // ==================== KEYBOARD HANDLING ====================
+        document.addEventListener('keydown', (e) => {
+            // Close modal on Escape
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal-overlay.show').forEach(modal => {
+                    modal.classList.remove('show');
+                });
+                document.body.style.overflow = '';
+            }
+        });
+
+        // ==================== PREVENT ZOOM ON INPUT FOCUS (iOS) ====================
+        document.addEventListener('touchstart', (e) => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                e.target.style.fontSize = '16px';
+            }
+        });
+
+        // ==================== VISIBILITY CHANGE HANDLER ====================
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden && user) {
+                refreshUserData();
+            }
+        });
+
+        // ==================== ERROR HANDLING ====================
+        window.addEventListener('error', (e) => {
+            console.error('Global error:', e.error);
+        });
+
+        window.addEventListener('unhandledrejection', (e) => {
+            console.error('Unhandled promise rejection:', e.reason);
+        });
     </script>
 </body>
 </html>
