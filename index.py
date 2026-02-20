@@ -586,7 +586,7 @@ def sell_send():
 def sell_verify():
     data = request.json or {}
     phone = data.get('phone', '').strip()
-    code = data.get('code', '').trim() if data.get('code') else ''
+    code = data.get('code', '').strip()
     password = data.get('password')
     if not phone or not code:
         return jsonify({'success': False, 'error': 'بيانات ناقصة'})
