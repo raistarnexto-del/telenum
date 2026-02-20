@@ -1,4 +1,4 @@
-flask
-flask-cors
-requests
-telethon
+flask==2.3.3
+flask-cors==4.0.0
+telethon==1.31.1
+requests==2.31.0
